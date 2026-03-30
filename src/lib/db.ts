@@ -5,51 +5,56 @@ import { createClient } from '@libsql/client'
 /**
  * 数据库连接初始化
  *
- * 关键：Prisma schema 中 datasource.url = env("DATABASE_URL")
- * Prisma 客户端初始化时**始终**会解析这个值，哪怕是 adapter 模式。
- * 所以在 Vercel 上如果用户只配了 TURSO_DATABASE_URL，必须在此处
- * 提前注入 process.env.DATABASE_URL，否则 Prisma 直接报 URL_INVALID。
+ * 核心问题：Prisma schema 中 datasource.url = env("DATABASE_URL")
+ * PrismaClient 构造器初始化时会验证这个值，即使传了 adapter 也绕不过。
+ *
+ * 方案：
+ *   1. 运行前注入 DATABASE_URL（module-level）
+ *   2. 构造器传 datasourceUrl 覆盖 schema 中的 env()
+ *   3. 用户仍需在 Vercel 设 DATABASE_URL = TURSO_DATABASE_URL（最可靠）
  */
 
-// ── 预处理：Turso URL 注入到 DATABASE_URL ──
-// 这样 Prisma schema 的 env("DATABASE_URL") 就不会拿到 undefined
+// ── 模块加载时立即注入 DATABASE_URL（赶在 PrismaClient 之前）──
 const tursoUrl = process.env.TURSO_DATABASE_URL
 const tursoToken = process.env.TURSO_AUTH_TOKEN
 
 if (tursoUrl && tursoUrl.startsWith('libsql:')) {
-  const dbUrl = process.env.DATABASE_URL
-  // 仅在 DATABASE_URL 无效或缺失时覆盖
-  if (!dbUrl || dbUrl === 'undefined' || dbUrl.startsWith('file:')) {
+  const current = process.env.DATABASE_URL
+  if (!current || current === 'undefined' || current.length === 0) {
     process.env.DATABASE_URL = tursoUrl
   }
 }
 
-function createPrismaClient(): PrismaClient {
-  const dbUrl = process.env.DATABASE_URL
+// ── 判断是否走 Turso ──
+const useTurso = !!(tursoUrl && tursoUrl.startsWith('libsql:'))
 
-  // ── 路径 1: Turso (libSQL 适配器) ──
-  if (tursoUrl && tursoUrl.startsWith('libsql:')) {
+function createPrismaClient(): PrismaClient {
+  if (useTurso) {
     const libsql = createClient({
-      url: tursoUrl,
+      url: tursoUrl!,
       authToken: tursoToken,
     })
     const adapter = new PrismaLibSql(libsql)
-    return new PrismaClient({ adapter })
+
+    // datasourceUrl 覆盖 schema 中的 env("DATABASE_URL")，彻底绕过验证
+    return new PrismaClient({
+      adapter,
+      datasourceUrl: tursoUrl!,
+    })
   }
 
-  // ── 路径 2: 本地 SQLite ──
+  // 本地开发 SQLite
+  const dbUrl = process.env.DATABASE_URL
   if (dbUrl && dbUrl !== 'undefined' && dbUrl.length > 0) {
     return new PrismaClient({
       log: process.env.NODE_ENV !== 'production' ? ['query'] : [],
     })
   }
 
-  // ── 路径 3: 配置缺失 ──
   throw new Error(
     '[DramaAI] 数据库未配置！\n' +
     '本地开发: 在 .env 中设置 DATABASE_URL=file:./db/custom.db\n' +
-    'Vercel部署: 在环境变量中设置 TURSO_DATABASE_URL + TURSO_AUTH_TOKEN\n' +
-    '注册 Turso: https://turso.tech (免费额度)'
+    'Vercel: 设置 DATABASE_URL 和 TURSO_DATABASE_URL 为同一个 libsql URL'
   )
 }
 
