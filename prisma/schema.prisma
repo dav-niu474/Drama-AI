@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 // 短剧项目
@@ -14,7 +15,7 @@ model DramaProject {
   genre       String   @default("都市")
   description String   @default("")
   coverImage  String   @default("")
-  status      String   @default("draft") // draft, writing, designing, producing, completed
+  status      String   @default("draft")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -28,7 +29,7 @@ model Character {
   id          String   @id @default(cuid())
   projectId   String
   name        String
-  role        String   @default("主角") // 主角, 配角, 群演
+  role        String   @default("主角")
   gender      String   @default("女")
   age         String   @default("25")
   appearance  String   @default("")
@@ -50,9 +51,9 @@ model DramaScene {
   description String   @default("")
   dialogue    String   @default("")
   location    String   @default("")
-  timeOfDay   String   @default("白天") // 白天, 黄昏, 夜晚, 黎明
-  mood        String   @default("平静") // 平静, 紧张, 浪漫, 悲伤, 欢快
-  cameraAngle String   @default("中景") // 特写, 近景, 中景, 全景, 远景
+  timeOfDay   String   @default("白天")
+  mood        String   @default("平静")
+  cameraAngle String   @default("中景")
   imageUrl    String   @default("")
   videoUrl    String   @default("")
   audioUrl    String   @default("")

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
-import fs from 'fs'
-import path from 'path'
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,10 +11,7 @@ export async function POST(req: NextRequest) {
 
     // 文本长度限制：1024字符
     const maxLen = 1024
-    let finalText = text
-    if (text.length > maxLen) {
-      finalText = text.substring(0, maxLen)
-    }
+    const finalText = text.length > maxLen ? text.substring(0, maxLen) : text
 
     const zai = await ZAI.create()
 
@@ -31,21 +26,14 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await response.arrayBuffer()
     const buffer = Buffer.from(new Uint8Array(arrayBuffer))
 
-    // 保存音频文件
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true })
-    }
-
-    const filename = `tts_${Date.now()}.wav`
-    const filepath = path.join(uploadsDir, filename)
-    fs.writeFileSync(filepath, buffer)
+    // 直接返回 base64 Data URL（兼容 Vercel 无文件系统）
+    const dataUrl = `data:audio/wav;base64,${buffer.toString('base64')}`
 
     return NextResponse.json({
       success: true,
-      audioUrl: `/uploads/${filename}`,
+      audioUrl: dataUrl,
       size: buffer.length,
-      duration: Math.ceil(finalText.length / 4) // 估算时长
+      duration: Math.ceil(finalText.length / 4)
     })
   } catch (error) {
     console.error('TTS error:', error)

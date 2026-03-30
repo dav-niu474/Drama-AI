@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
-import fs from 'fs'
-import path from 'path'
-import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, size, type, seed } = await req.json()
+    const { prompt, size, type } = await req.json()
 
     if (!prompt) {
       return NextResponse.json({ error: '请提供图片描述' }, { status: 400 })
@@ -16,10 +13,10 @@ export async function POST(req: NextRequest) {
 
     // 选择合适尺寸
     let imageSize = size || '1024x1024'
-    if (!imageSize) {
-      if (type === 'character') imageSize = '768x1344' // 竖版人像
-      else if (type === 'scene') imageSize = '1344x768' // 横版场景
-      else if (type === 'storyboard') imageSize = '1152x864' // 分镜
+    if (!size) {
+      if (type === 'character') imageSize = '864x1152'
+      else if (type === 'scene') imageSize = '1152x864'
+      else if (type === 'storyboard') imageSize = '1152x864'
       else imageSize = '1024x1024'
     }
 
@@ -30,25 +27,14 @@ export async function POST(req: NextRequest) {
     })
 
     const imageBase64 = response.data[0].base64
-    
-    // 保存图片到本地
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true })
-    }
 
-    const hash = crypto.createHash('md5').update(`${prompt}-${Date.now()}`).digest('hex')
-    const filename = `${hash}.png`
-    const filepath = path.join(uploadsDir, filename)
-    
-    const buffer = Buffer.from(imageBase64, 'base64')
-    fs.writeFileSync(filepath, buffer)
+    // 直接返回 base64 Data URL（兼容 Vercel 无文件系统）
+    const dataUrl = `data:image/png;base64,${imageBase64}`
 
     return NextResponse.json({
       success: true,
-      imageUrl: `/uploads/${filename}`,
+      imageUrl: dataUrl,
       size: imageSize,
-      fileSize: buffer.length,
       prompt: prompt
     })
   } catch (error) {
