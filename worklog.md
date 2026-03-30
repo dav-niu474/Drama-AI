@@ -142,3 +142,21 @@ Stage Summary:
 - 完整平台整合完成
 - 总计约7864行前端代码 + 7个后端API
 - AI短剧全流程设计平台
+
+---
+## Task ID: guide
+### Agent: guide-builder
+### Work Task
+创建综合使用指南组件 (UsageGuide) 并集成到平台的侧边栏和仪表板中。
+
+### Work Summary
+- 创建 `/src/components/drama/usage-guide.tsx` 组件，包含4个Tab页：
+  1. **快速入门**: 7步工作流程引导，2列网格布局，彩色左边框步骤卡片，底部小提示区
+  2. **模块详解**: 7个模块的详细功能说明和操作指南，带彩色边框的卡片列表
+  3. **AI 能力**: 5种AI能力的网格展示，含技术标签（大语言模型/图像生成/语音合成/视频生成）
+  4. **常见问题**: 6个FAQ手风琴式问答
+- 集成到侧边栏 (sidebar.tsx)：添加 BookOpen 图标、"使用指南"按钮、guideOpen 状态管理、UsageGuide Dialog 渲染
+- 集成到仪表板 (dashboard.tsx)：快捷入口网格从4列改为5列，添加第5个"使用指南"快捷卡片
+- 使用 Dialog、Tabs、ScrollArea、Badge、Separator、Accordion 等 shadcn/ui 组件
+- 配色方案：violet/fuchsia 作为主色调，无 indigo/blue
+- ESLint 零错误，dev server 正常运行 (GET / 200)

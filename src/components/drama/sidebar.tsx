@@ -14,7 +14,9 @@ import {
   ChevronRight,
   Sparkles,
   CheckCircle2,
+  BookOpen,
 } from 'lucide-react'
+import { UsageGuide } from '@/components/drama/usage-guide'
 import { cn } from '@/lib/utils'
 import { useDramaStore, type WorkflowStep } from '@/store/drama-store'
 import { Button } from '@/components/ui/button'
@@ -58,7 +60,7 @@ function getStepProgress(step: WorkflowStep): number {
 }
 
 // ─── Desktop Sidebar ────────────────────────────────────────
-function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+function SidebarNav({ collapsed, onNavigate, onGuideClick }: { collapsed: boolean; onNavigate?: () => void; onGuideClick?: () => void }) {
   const { currentStep, setCurrentStep, currentProject } = useDramaStore()
 
   const progress = currentProject ? getStepProgress(currentStep) : 0
@@ -216,6 +218,22 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
 
       <Separator className="bg-slate-700/50" />
 
+      {/* Usage Guide Button */}
+      <div className="px-3 py-2">
+        <button
+          onClick={onGuideClick}
+          className={cn(
+            'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:bg-slate-800/60 hover:text-slate-200',
+            collapsed && 'justify-center px-2'
+          )}
+        >
+          <BookOpen className="size-[18px]" />
+          {!collapsed && <span>使用指南</span>}
+        </button>
+      </div>
+
+      <Separator className="bg-slate-700/50" />
+
       {/* Current Project */}
       <div className={cn('p-3', collapsed && 'flex justify-center')}>
         {currentProject ? (
@@ -294,7 +312,7 @@ function MobileSidebar() {
       </SheetTrigger>
       <SheetContent side="left" className="w-72 bg-slate-900 p-0">
         <SheetTitle className="sr-only">导航菜单</SheetTitle>
-        <SidebarNav collapsed={false} onNavigate={() => setOpen(false)} />
+        <SidebarNav collapsed={false} onNavigate={() => setOpen(false)} onGuideClick={() => setOpen(false)} />
       </SheetContent>
     </Sheet>
   )
@@ -303,6 +321,7 @@ function MobileSidebar() {
 // ─── Main Sidebar Export ─────────────────────────────────────
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
 
   return (
     <>
@@ -316,7 +335,7 @@ export function Sidebar() {
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-slate-700/50 bg-slate-900 md:flex"
       >
-        <SidebarNav collapsed={collapsed} />
+        <SidebarNav collapsed={collapsed} onGuideClick={() => setGuideOpen(true)} />
 
         {/* Collapse toggle */}
         <div className="absolute -right-3 top-20 z-50 hidden md:block">
@@ -330,6 +349,9 @@ export function Sidebar() {
           </Button>
         </div>
       </motion.aside>
+
+      {/* Usage Guide Dialog */}
+      <UsageGuide open={guideOpen} onOpenChange={setGuideOpen} />
     </>
   )
 }

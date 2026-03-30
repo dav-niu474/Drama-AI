@@ -21,6 +21,7 @@ import {
   Pencil,
   CalendarDays,
   Search,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDramaStore, type DramaProject, type WorkflowStep } from '@/store/drama-store'
@@ -53,6 +54,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { UsageGuide } from '@/components/drama/usage-guide'
 
 // ─── Genre config ───────────────────────────────────────────
 const genreOptions = [
@@ -426,6 +428,7 @@ function CreateProjectDialog({
 // ─── Main Dashboard ─────────────────────────────────────────
 export function Dashboard() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -596,7 +599,7 @@ export function Dashboard() {
         transition={{ delay: 0.3 }}
       >
         <h2 className="mb-3 text-base font-semibold text-slate-900">快捷入口</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
           <QuickActionCard
             icon={Wand2}
             title="AI创意构思"
@@ -628,6 +631,14 @@ export function Dashboard() {
             gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
             delay={0.5}
             onClick={() => handleQuickAction('voice')}
+          />
+          <QuickActionCard
+            icon={BookOpen}
+            title="使用指南"
+            description="了解平台功能和使用方法"
+            gradient="bg-gradient-to-br from-slate-500 to-slate-600"
+            delay={0.55}
+            onClick={() => setGuideOpen(true)}
           />
         </div>
       </motion.div>
@@ -695,6 +706,9 @@ export function Dashboard() {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
+
+      {/* Usage Guide Dialog */}
+      <UsageGuide open={guideOpen} onOpenChange={setGuideOpen} />
     </div>
   )
 }
