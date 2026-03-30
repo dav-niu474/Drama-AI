@@ -5,23 +5,19 @@ import { createClient } from '@libsql/client'
 /**
  * 数据库连接
  *
- * 关键约束：Prisma schema provider=sqlite 时，env("DATABASE_URL") 必须是
- * 合法的 file: URL，否则构造器直接报错。即使用了 adapter 也绕不过这个验证。
+ * 本地开发：DATABASE_URL=file:./db/custom.db → 直连 SQLite
+ * Vercel：  TURSO_DATABASE_URL + TURSO_AUTH_TOKEN → adapter 连 Turso
+ *           构建时 DATABASE_URL=file:/tmp/drama-ai.db（占位，不实际使用）
  *
- * 方案：
- *   本地开发  DATABASE_URL=file:./db/custom.db → 直连 SQLite（不需要 adapter）
- *   Vercel    用户配 TURSO_DATABASE_URL        → adapter 连 Turso
- *             但仍需设 DATABASE_URL=file:/tmp/drama-ai.db 作为占位符
- *             （仅让 Prisma 构造器通过验证，实际连接走 adapter）
+ * 重要：adapter 模式下不能传 datasourceUrl，连接由 adapter 管理。
  */
 
 const tursoUrl = process.env.TURSO_DATABASE_URL
 const tursoToken = process.env.TURSO_AUTH_TOKEN
 
-// ── 预处理：确保 DATABASE_URL 合法 ──
-// Vercel 上如果用户只配了 TURSO_DATABASE_URL，补一个 file: 占位 URL
+// 确保 DATABASE_URL 是合法的 file: URL（Prisma schema 验证需要）
 const currentDbUrl = process.env.DATABASE_URL
-if ((!currentDbUrl || currentDbUrl === 'undefined' || currentDbUrl.length === 0) && tursoUrl) {
+if (!currentDbUrl || currentDbUrl === 'undefined' || currentDbUrl.length === 0) {
   process.env.DATABASE_URL = 'file:/tmp/drama-ai.db'
 }
 
@@ -34,17 +30,13 @@ function createPrismaClient(): PrismaClient {
     })
     const adapter = new PrismaLibSql(libsql)
 
-    // datasourceUrl 覆盖 schema 中的 env("DATABASE_URL")
-    // 传一个合法的 libsql: URL，这样 Prisma 构造器验证能通过
-    return new PrismaClient({
-      adapter,
-      datasourceUrl: tursoUrl,
-    })
+    // adapter 模式只传 adapter，不传 datasourceUrl
+    return new PrismaClient({ adapter })
   }
 
   // ── 本地 SQLite ──
   const dbUrl = process.env.DATABASE_URL
-  if (dbUrl && dbUrl !== 'undefined' && dbUrl.length > 0 && dbUrl.startsWith('file:')) {
+  if (dbUrl && dbUrl !== 'undefined' && dbUrl.length > 0) {
     return new PrismaClient({
       log: process.env.NODE_ENV !== 'production' ? ['query'] : [],
     })
@@ -52,9 +44,8 @@ function createPrismaClient(): PrismaClient {
 
   throw new Error(
     '[DramaAI] 数据库未配置！\n' +
-    '本地开发: 在 .env 中设置 DATABASE_URL=file:./db/custom.db\n' +
-    'Vercel: 设置 TURSO_DATABASE_URL + TURSO_AUTH_TOKEN\n' +
-    '同时设置 DATABASE_URL=file:/tmp/drama-ai.db（占位，实际走 Turso）'
+    '本地开发: .env 中设置 DATABASE_URL=file:./db/custom.db\n' +
+    'Vercel: 设置 TURSO_DATABASE_URL + TURSO_AUTH_TOKEN'
   )
 }
 
