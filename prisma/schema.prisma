@@ -8,6 +8,16 @@ datasource db {
   relationMode = "prisma"
 }
 
+// 模型配置
+model ModelConfig {
+  id        String   @id @default(cuid())
+  category  String   @unique // llm / image / tts / video
+  config    String   @default("{}") // JSON 配置参数
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
 // 短剧项目
 model DramaProject {
   id          String   @id @default(cuid())
