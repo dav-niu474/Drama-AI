@@ -1,0 +1,333 @@
+==========================================
+[2026-03-30 02:49:59] Starting: bun install
+==========================================
+[BUN] Installing dependencies...
+[0.33ms] ".env"
+bun install v1.3.10 (30e609e0)
+
++ @tailwindcss/postcss@4.1.18
++ @types/react@19.2.8
++ @types/react-dom@19.2.3
++ bun-types@1.3.6
++ eslint@9.39.2
++ eslint-config-next@16.1.3
++ tailwindcss@4.1.18
++ tw-animate-css@1.4.0
++ typescript@5.9.3
++ @dnd-kit/core@6.3.1
++ @dnd-kit/sortable@10.0.0
++ @dnd-kit/utilities@3.2.2
++ @hookform/resolvers@5.2.2
++ @mdxeditor/editor@3.52.3
++ @prisma/client@6.19.2
++ @radix-ui/react-accordion@1.2.12
++ @radix-ui/react-alert-dialog@1.1.15
++ @radix-ui/react-aspect-ratio@1.1.8
++ @radix-ui/react-avatar@1.1.11
++ @radix-ui/react-checkbox@1.3.3
++ @radix-ui/react-collapsible@1.1.12
++ @radix-ui/react-context-menu@2.2.16
++ @radix-ui/react-dialog@1.1.15
++ @radix-ui/react-dropdown-menu@2.1.16
++ @radix-ui/react-hover-card@1.1.15
++ @radix-ui/react-label@2.1.8
++ @radix-ui/react-menubar@1.1.16
++ @radix-ui/react-navigation-menu@1.2.14
++ @radix-ui/react-popover@1.1.15
++ @radix-ui/react-progress@1.1.8
++ @radix-ui/react-radio-group@1.3.8
++ @radix-ui/react-scroll-area@1.2.10
++ @radix-ui/react-select@2.2.6
++ @radix-ui/react-separator@1.1.8
++ @radix-ui/react-slider@1.3.6
++ @radix-ui/react-slot@1.2.4
++ @radix-ui/react-switch@1.2.6
++ @radix-ui/react-tabs@1.1.13
++ @radix-ui/react-toast@1.2.15
++ @radix-ui/react-toggle@1.1.10
++ @radix-ui/react-toggle-group@1.1.11
++ @radix-ui/react-tooltip@1.2.8
++ @reactuses/core@6.1.9
++ @tanstack/react-query@5.90.19
++ @tanstack/react-table@8.21.3
++ class-variance-authority@0.7.1
++ clsx@2.1.1
++ cmdk@1.1.1
++ date-fns@4.1.0
++ embla-carousel-react@8.6.0
++ framer-motion@12.26.2
++ input-otp@1.4.2
++ lucide-react@0.525.0
++ next@16.1.3
++ next-auth@4.24.13
++ next-intl@4.7.0
++ next-themes@0.4.6
++ prisma@6.19.2
++ react@19.2.3
++ react-day-picker@9.13.0
++ react-dom@19.2.3
++ react-hook-form@7.71.1
++ react-markdown@10.1.0
++ react-resizable-panels@3.0.6
++ react-syntax-highlighter@15.6.6
++ recharts@2.15.4
++ sharp@0.34.5
++ sonner@2.0.7
++ tailwind-merge@3.4.0
++ tailwindcss-animate@1.0.7
++ uuid@11.1.0
++ vaul@1.1.2
++ z-ai-web-dev-sdk@0.0.17
++ zod@4.3.5
++ zustand@5.0.10
+
+827 packages installed [8.19s]
+==========================================
+[2026-03-30 02:50:07] Completed: bun install
+[LOG] Step: bun install | Duration: 8s
+==========================================
+
+==========================================
+[2026-03-30 02:50:07] Starting: bun run db:push
+==========================================
+[BUN] Setting up database...
+$ prisma db push
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": SQLite database "custom.db" at "file:/home/z/my-project/db/custom.db"
+
+SQLite database custom.db created at file:/home/z/my-project/db/custom.db
+
+🚀  Your database is now in sync with your Prisma schema. Done in 19ms
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 83ms
+┌─────────────────────────────────────────────────────────┐
+│  Update available 6.19.2 -> 7.6.0                       │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+
+==========================================
+[2026-03-30 02:50:09] Completed: bun run db:push
+[LOG] Step: bun run db:push | Duration: 2s
+==========================================
+
+==========================================
+[2026-03-30 02:50:09] Starting: Starting Next.js dev server
+==========================================
+[BUN] Starting development server...
+==========================================
+$ next dev -p 3000 2>&1 | tee dev.log
+[2026-03-30 02:50:09] Completed: Starting Next.js dev server
+[LOG] Step: Starting Next.js dev server | Duration: 0s
+==========================================
+
+==========================================
+[2026-03-30 02:50:09] Starting: Waiting for Next.js dev server
+==========================================
+Waiting for Next.js dev server to be ready on localhost:3000...
+Attempt 1/60: Next.js dev server not ready yet, waiting...
+▲ Next.js 16.1.3 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://21.0.3.103:3000
+- Environments: .env
+
+✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+
+  We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+  	- include was updated to add '.next/dev/types/**/*.ts'
+
+  The following mandatory changes were made to your tsconfig.json:
+
+  	- jsx was set to react-jsx (next.js uses the React automatic runtime)
+
+✓ Ready in 886ms
+ GET / 200 in 2.6s (compile: 2.4s, render: 159ms)
+Next.js dev server is ready!
+==========================================
+[2026-03-30 02:50:13] Completed: Waiting for Next.js dev server
+[LOG] Step: Waiting for Next.js dev server | Duration: 4s
+==========================================
+
+==========================================
+[2026-03-30 02:50:13] Starting: Health check
+==========================================
+[BUN] Performing health check...
+ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+[BUN] Health check passed
+==========================================
+[2026-03-30 02:50:13] Completed: Health check
+[LOG] Step: Health check | Duration: 0s
+==========================================
+
+==========================================
+[2026-03-30 02:50:13] Starting: Starting mini-services
+==========================================
+Found mini-services directory, scanning for sub-services...
+Mini-services startup completed. Started 0 service(s).
+==========================================
+[2026-03-30 02:50:13] Completed: Starting mini-services
+[LOG] Step: Starting mini-services | Duration: 0s
+==========================================
+
+Next.js dev server is running in background (PID: 652).
+Use 'kill 652' to stop it.
+✓ Compiled in 129ms
+✓ Compiled in 114ms
+✓ Compiled in 876ms
+✓ Compiled in 252ms
+✓ Compiled in 272ms
+✓ Compiled in 129ms
+ GET / 200 in 567ms (compile: 354ms, render: 213ms)
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 317ms (compile: 283ms, render: 33ms)
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 10ms (compile: 3ms, render: 7ms)
+ POST /api/projects 200 in 16ms (compile: 3ms, render: 12ms)
+prisma:query SELECT 1
+prisma:query INSERT INTO `main`.`DramaProject` (`id`, `name`, `genre`, `description`, `coverImage`, `status`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?) RETURNING `id` AS `id`, `name` AS `name`, `genre` AS `genre`, `description` AS `description`, `coverImage` AS `coverImage`, `status` AS `status`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 10ms (compile: 3ms, render: 7ms)
+ GET / 200 in 71ms (compile: 5ms, render: 66ms)
+ GET /api/projects 200 in 9ms (compile: 3ms, render: 7ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT 1
+ GET /api/projects 200 in 9ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 8ms (compile: 2ms, render: 6ms)
+ GET /api/projects 200 in 10ms (compile: 2ms, render: 8ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET / 200 in 60ms (compile: 4ms, render: 56ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 7ms (compile: 1667µs, render: 5ms)
+ GET / 200 in 52ms (compile: 3ms, render: 49ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 7ms (compile: 1718µs, render: 5ms)
+ GET / 200 in 321ms (compile: 117ms, render: 204ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 8ms (compile: 2ms, render: 6ms)
+ GET / 200 in 335ms (compile: 119ms, render: 216ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 11ms (compile: 4ms, render: 8ms)
+ GET / 200 in 349ms (compile: 122ms, render: 226ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 8ms (compile: 1988µs, render: 6ms)
+ GET / 200 in 318ms (compile: 80ms, render: 237ms)
+prisma:query SELECT 1
+ GET /api/projects 200 in 7ms (compile: 2ms, render: 5ms)
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET / 200 in 302ms (compile: 77ms, render: 226ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 8ms (compile: 2ms, render: 6ms)
+ GET / 200 in 280ms (compile: 77ms, render: 203ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 6ms (compile: 1581µs, render: 5ms)
+⨯ ./src/app/page.tsx:18:10
+Ecmascript file had an error
+[0m [90m 16 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m'@/components/ui/button'[39m
+ [90m 17 |[39m [36mimport[39m { [33mBadge[39m } [36mfrom[39m [32m'@/components/ui/badge'[39m
+[31m[1m>[22m[39m[90m 18 |[39m [36mimport[39m { [33mSparkles[39m } [36mfrom[39m [32m'lucide-react'[39m
+ [90m    |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 19 |[39m [36mimport[39m { [33mSeparator[39m } [36mfrom[39m [32m'@/components/ui/separator'[39m
+ [90m 20 |[39m [36mimport[39m {
+ [90m 21 |[39m   [33mTooltip[39m[33m,[39m[0m
+
+the name `Sparkles` is defined multiple times
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+
+
+ GET / 500 in 1050ms (compile: 917ms, render: 133ms)
+⚠ Cross origin request detected from preview-chat-247e8c4b-c40e-478d-921b-dcbd465bf08c.space.z.ai to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+✓ Compiled in 135ms
+ GET / 200 in 329ms (compile: 91ms, render: 237ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 7ms (compile: 1742µs, render: 5ms)
+✓ Compiled in 157ms
+ GET / 200 in 291ms (compile: 64ms, render: 227ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 7ms (compile: 1623µs, render: 5ms)
+ GET / 200 in 63ms (compile: 3ms, render: 60ms)
+prisma:query SELECT 1
+ GET /api/projects 200 in 6ms (compile: 1597µs, render: 4ms)
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET / 200 in 55ms (compile: 5ms, render: 50ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 6ms (compile: 1656µs, render: 4ms)
+ GET / 200 in 69ms (compile: 4ms, render: 65ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 9ms (compile: 2ms, render: 6ms)
+ GET / 200 in 54ms (compile: 4ms, render: 50ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 6ms (compile: 1741µs, render: 5ms)
+ GET / 200 in 58ms (compile: 5ms, render: 53ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 6ms (compile: 1731µs, render: 5ms)
+ GET / 200 in 54ms (compile: 2ms, render: 52ms)
+prisma:query SELECT 1
+ GET /api/projects 200 in 6ms (compile: 1825µs, render: 4ms)
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET / 200 in 60ms (compile: 4ms, render: 56ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 5ms (compile: 1625µs, render: 4ms)
+ GET / 200 in 48ms (compile: 2ms, render: 46ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 10ms (compile: 5ms, render: 5ms)
+ GET / 200 in 50ms (compile: 2ms, render: 47ms)
+ GET /api/projects 200 in 9ms (compile: 4ms, render: 6ms)
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 6ms (compile: 1621µs, render: 5ms)
+ POST /api/generate-script 200 in 6.3s (compile: 107ms, render: 6.2s)
+ GET / 200 in 46ms (compile: 2ms, render: 43ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 6ms (compile: 1716µs, render: 4ms)
+ GET / 200 in 40ms (compile: 4ms, render: 36ms)
+prisma:query SELECT 1
+ GET /api/projects 200 in 7ms (compile: 1887µs, render: 5ms)
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET / 200 in 44ms (compile: 2ms, render: 41ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`DramaProject`.`id`, `main`.`DramaProject`.`name`, `main`.`DramaProject`.`genre`, `main`.`DramaProject`.`description`, `main`.`DramaProject`.`coverImage`, `main`.`DramaProject`.`status`, `main`.`DramaProject`.`createdAt`, `main`.`DramaProject`.`updatedAt`, COALESCE(`aggr_selection_0_Character`.`_aggr_count_characters`, 0) AS `_aggr_count_characters`, COALESCE(`aggr_selection_1_DramaScene`.`_aggr_count_scenes`, 0) AS `_aggr_count_scenes`, COALESCE(`aggr_selection_2_Episode`.`_aggr_count_episodes`, 0) AS `_aggr_count_episodes` FROM `main`.`DramaProject` LEFT JOIN (SELECT `main`.`Character`.`projectId`, COUNT(*) AS `_aggr_count_characters` FROM `main`.`Character` WHERE 1=1 GROUP BY `main`.`Character`.`projectId`) AS `aggr_selection_0_Character` ON (`main`.`DramaProject`.`id` = `aggr_selection_0_Character`.`projectId`) LEFT JOIN (SELECT `main`.`DramaScene`.`projectId`, COUNT(*) AS `_aggr_count_scenes` FROM `main`.`DramaScene` WHERE 1=1 GROUP BY `main`.`DramaScene`.`projectId`) AS `aggr_selection_1_DramaScene` ON (`main`.`DramaProject`.`id` = `aggr_selection_1_DramaScene`.`projectId`) LEFT JOIN (SELECT `main`.`Episode`.`projectId`, COUNT(*) AS `_aggr_count_episodes` FROM `main`.`Episode` WHERE 1=1 GROUP BY `main`.`Episode`.`projectId`) AS `aggr_selection_2_Episode` ON (`main`.`DramaProject`.`id` = `aggr_selection_2_Episode`.`projectId`) WHERE 1=1 ORDER BY `main`.`DramaProject`.`updatedAt` DESC LIMIT ? OFFSET ?
+ GET /api/projects 200 in 6ms (compile: 1565µs, render: 5ms)

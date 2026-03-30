@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 短剧项目
+model DramaProject {
+  id          String   @id @default(cuid())
+  name        String
+  genre       String   @default("都市")
+  description String   @default("")
+  coverImage  String   @default("")
+  status      String   @default("draft") // draft, writing, designing, producing, completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  characters Character[]
+  scenes     DramaScene[]
+  episodes   Episode[]
+}
+
+// 角色
+model Character {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  role        String   @default("主角") // 主角, 配角, 群演
+  gender      String   @default("女")
+  age         String   @default("25")
+  appearance  String   @default("")
+  personality String   @default("")
+  avatarUrl   String   @default("")
+  voiceType   String   @default("tongtong")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project DramaProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// 场景
+model DramaScene {
+  id          String   @id @default(cuid())
+  projectId   String
+  episodeId   String?
+  title       String
+  description String   @default("")
+  dialogue    String   @default("")
+  location    String   @default("")
+  timeOfDay   String   @default("白天") // 白天, 黄昏, 夜晚, 黎明
+  mood        String   @default("平静") // 平静, 紧张, 浪漫, 悲伤, 欢快
+  cameraAngle String   @default("中景") // 特写, 近景, 中景, 全景, 远景
+  imageUrl    String   @default("")
+  videoUrl    String   @default("")
+  audioUrl    String   @default("")
+  sortOrder   Int      @default(0)
+  duration    Int      @default(5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project DramaProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  episode Episode?     @relation(fields: [episodeId], references: [id], onDelete: SetNull)
+}
+
+// 剧集/集数
+model Episode {
+  id        String   @id @default(cuid())
+  projectId String
+  title     String
+  episodeNo Int      @default(1)
+  synopsis  String   @default("")
+  script    String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project DramaProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scenes  DramaScene[]
+}
