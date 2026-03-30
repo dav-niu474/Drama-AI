@@ -15,6 +15,7 @@ import {
   Sparkles,
   CheckCircle2,
   BookOpen,
+  Settings2,
 } from 'lucide-react'
 import { UsageGuide } from '@/components/drama/usage-guide'
 import { cn } from '@/lib/utils'
@@ -50,6 +51,7 @@ const navItems: NavItem[] = [
   { step: 'voice', label: '配音工作室', icon: Mic, description: 'AI智能配音' },
   { step: 'video', label: '视频工厂', icon: Video, description: '生成短剧视频' },
   { step: 'timeline', label: '时间线', icon: Clock, description: '项目时间线管理' },
+  { step: 'config', label: '模型配置', icon: Settings2, description: 'AI模型参数设置' },
 ]
 
 const workflowSteps = ['script', 'characters', 'storyboard', 'voice', 'video', 'timeline'] as const

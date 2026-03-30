@@ -9,6 +9,7 @@ export type WorkflowStep =
   | 'voice'
   | 'video'
   | 'timeline'
+  | 'config'
 
 export interface DramaProject {
   id: string

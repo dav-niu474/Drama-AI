@@ -160,3 +160,34 @@ Stage Summary:
 - 使用 Dialog、Tabs、ScrollArea、Badge、Separator、Accordion 等 shadcn/ui 组件
 - 配色方案：violet/fuchsia 作为主色调，无 indigo/blue
 - ESLint 零错误，dev server 正常运行 (GET / 200)
+
+---
+## Task ID: model-config
+### Agent: main
+### Work Task
+添加模型配置页面，允许用户自定义AI模型的参数设置。
+
+### Work Summary
+- 创建 `/src/app/api/model-config/route.ts` API路由：
+  - GET：获取所有模型配置（自动创建默认配置）
+  - PUT：更新单个模型配置（JSON参数 + enabled状态）
+  - POST：重置指定类别的配置为默认值
+  - 4个默认配置分类：llm、image、tts、video
+- 创建 `/src/components/drama/model-config-page.tsx` 组件（约680行）：
+  - 顶部概览卡片：4个分类（大语言模型/图像生成/语音合成/视频生成）
+  - 主配置面板：可切换的4个配置标签页
+  - LLM配置：系统提示词、温度(Temperature)、Top P、Max Tokens，含预设快捷按钮
+  - 图像配置：角色/场景默认尺寸、质量(标准/高清)、风格(生动/自然)、自动优化提示词开关
+  - TTS配置：默认语音选择(7种音色)、语速调节、输出格式(wav/mp3/opus)、最大文本长度、声音一览
+  - 视频配置：画质(极速/标准/高清)、时长(3/5/8/10秒)、帧率(24/30/60fps)、分辨率、自动音频/自动轮询开关
+  - 未保存变更提示、重置确认对话框、保存/禁用功能
+- 更新 Zustand Store (`drama-store.ts`)：添加 `'config'` 到 WorkflowStep 类型
+- 更新侧边栏 (`sidebar.tsx`)：添加 Settings2 图标和"模型配置"导航项
+- 更新主页面 (`page.tsx`)：添加 config 步骤标题/图标/组件渲染
+- 集成到现有API路由：
+  - `generate-script/route.ts`：读取 temperature, max_tokens, top_p 配置
+  - `generate-image/route.ts`：读取 charSize, sceneSize, quality, style, enhancePrompt 配置
+  - `generate-tts/route.ts`：读取 defaultVoice, defaultSpeed, format, maxChars 配置
+  - `generate-video/route.ts`：读取 defaultQuality, defaultDuration, defaultFps, defaultSize, withAudio 配置
+- Prisma schema 中 ModelConfig 模型已存在，无需修改
+- ESLint 零错误，dev server 正常运行

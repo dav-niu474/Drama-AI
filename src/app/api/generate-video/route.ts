@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
+import { db } from '@/lib/db'
+
+// 从数据库读取模型配置
+async function getModelConfig(category: string): Promise<Record<string, unknown>> {
+  try {
+    const record = await db.modelConfig.findUnique({ where: { category } })
+    if (record) return JSON.parse(record.config)
+  } catch { /* fallback to defaults */ }
+  return {}
+}
 
 // 内存中的任务状态管理
 const taskStore = new Map<string, {
@@ -18,17 +28,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '请提供视频描述或图片' }, { status: 400 })
     }
 
+    // 读取视频生成配置
+    const videoConfig = await getModelConfig('video')
+
     const zai = await ZAI.create()
 
     // 创建视频生成任务
     const task = await zai.video.generations.create({
       prompt: prompt || 'Animate this scene with natural motion',
       image_url: image_url,
-      quality: quality || 'speed',
-      duration: duration || 5,
-      fps: fps || 30,
-      size: size || '1920x1080',
-      with_audio: with_audio || false,
+      quality: quality || (videoConfig.defaultQuality as string) || 'speed',
+      duration: duration || (videoConfig.defaultDuration as number) || 5,
+      fps: fps || (videoConfig.defaultFps as number) || 30,
+      size: size || (videoConfig.defaultSize as string) || '1920x1080',
+      with_audio: with_audio !== undefined ? with_audio : ((videoConfig.withAudio as boolean) || false),
     })
 
     // 保存任务状态

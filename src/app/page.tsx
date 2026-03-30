@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, LayoutDashboard, FileText, Users, Film, Mic, Video, Clock, Moon, Sparkles, Sun } from 'lucide-react'
+import { Bell, LayoutDashboard, FileText, Users, Film, Mic, Video, Clock, Moon, Sparkles, Sun, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDramaStore, type WorkflowStep } from '@/store/drama-store'
 import { Sidebar } from '@/components/drama/sidebar'
@@ -13,6 +13,7 @@ import { VideoFactory } from '@/components/drama/video-factory'
 import VoiceStudio from '@/components/drama/voice-studio'
 import { TimelinePreview } from '@/components/drama/timeline-preview'
 import { StoryboardDesigner } from '@/components/drama/storyboard-designer'
+import { ModelConfigPage } from '@/components/drama/model-config-page'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -30,6 +31,7 @@ const stepTitles: Record<WorkflowStep, string> = {
   voice: '配音工作室',
   video: '视频工厂',
   timeline: '时间线',
+  config: '模型配置',
 }
 
 const stepIcons: Record<WorkflowStep, React.ElementType> = {
@@ -40,6 +42,7 @@ const stepIcons: Record<WorkflowStep, React.ElementType> = {
   voice: Mic,
   video: Video,
   timeline: Clock,
+  config: Settings2,
 }
 
 // ─── Page Transitions ───────────────────────────────────────
@@ -164,6 +167,7 @@ export default function Home() {
               {currentStep === 'voice' && <VoiceStudio />}
               {currentStep === 'video' && <VideoFactory />}
               {currentStep === 'timeline' && <TimelinePreview />}
+              {currentStep === 'config' && <ModelConfigPage />}
             </motion.div>
           </AnimatePresence>
         </main>

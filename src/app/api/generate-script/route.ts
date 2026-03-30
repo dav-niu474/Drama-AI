@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { generateObject } from 'ai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { z } from 'zod'
-
-// Note: Using z-ai-web-dev-sdk for LLM chat completions
 import ZAI from 'z-ai-web-dev-sdk'
+
+// 从数据库读取模型配置
+async function getModelConfig(category: string): Promise<Record<string, unknown>> {
+  try {
+    const record = await db.modelConfig.findUnique({ where: { category } })
+    if (record) return JSON.parse(record.config)
+  } catch { /* fallback to defaults */ }
+  return {}
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { prompt, genre, style, characters, existingScript, mode } = await req.json()
+
+    // 读取LLM配置
+    const llmConfig = await getModelConfig('llm')
+    const temperature = (llmConfig.temperature as number) ?? undefined
+    const maxTokens = (llmConfig.maxTokens as number) ?? undefined
+    const topP = (llmConfig.topP as number) ?? undefined
+    const systemPromptTemplate = (llmConfig.systemPrompt as string) || ''
 
     const zai = await ZAI.create()
 
@@ -95,7 +106,10 @@ export async function POST(req: NextRequest) {
 
     const completion = await zai.chat.completions.create({
       messages: messages,
-      thinking: { type: 'disabled' }
+      thinking: { type: 'disabled' },
+      ...(temperature !== undefined && { temperature }),
+      ...(maxTokens !== undefined && { max_tokens: maxTokens }),
+      ...(topP !== undefined && { top_p: topP }),
     })
 
     const response = completion.choices[0]?.message?.content || ''
