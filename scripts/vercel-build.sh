@@ -2,48 +2,32 @@
 # ═══════════════════════════════════════════════════════════
 # DramaAI - Vercel 构建脚本
 # ═══════════════════════════════════════════════════════════
-# 解决问题：
-#   1. Vercel 没有文件系统 → SQLite 不可用 → 需要 Turso
-#   2. Prisma schema 读 DATABASE_URL，但用户配的是 TURSO_DATABASE_URL
-#   3. 每次构建需自动同步表结构到 Turso
+#
+# 关键约束：Prisma schema provider=sqlite 只接受 file: URL
+# 用户在 Vercel 配的是 TURSO_DATABASE_URL (libsql://...)
+#
+# 方案：
+#   构建时 → 强制 DATABASE_URL=file:/tmp/dummy.db，让 prisma generate 验证通过
+#   运行时 → db.ts 通过 adapter 连接 Turso，不依赖 DATABASE_URL
+#   表结构 → 用户首次部署前需手动 push 一次（见下方说明）
 # ═══════════════════════════════════════════════════════════
 
 set -e
 
-echo "=== DramaAI Build Script ==="
+echo "=== DramaAI Build ==="
 
-# ── 1. 自动将 TURSO_DATABASE_URL 映射到 DATABASE_URL ──
-# Prisma CLI 读取 schema 中的 env("DATABASE_URL")，
-# 在 Vercel 上通过 TURSO_DATABASE_URL 注入
-if [ -n "$TURSO_DATABASE_URL" ]; then
-  if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "undefined" ] || [ "$DATABASE_URL" = "file:./db/custom.db" ]; then
-    export DATABASE_URL="$TURSO_DATABASE_URL"
-    echo "[DB] Mapped TURSO_DATABASE_URL → DATABASE_URL"
-  fi
-fi
+# ── 1. 覆盖 DATABASE_URL 为合法的 file: URL ──
+# 无论 Vercel 环境变量里是什么，构建阶段 Prisma 只需要解析 schema，
+# 强制给一个 file: 占位 URL 让验证通过
+export DATABASE_URL="file:/tmp/drama-ai.db"
+echo "[DB] DATABASE_URL set to file: placeholder for build"
 
-# ── 2. 检查数据库 URL 是否有效 ──
-if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "undefined" ]; then
-  echo "[DB] WARNING: DATABASE_URL is not set, skipping schema push"
-  echo "[DB] Database-dependent features will not work"
-else
-  echo "[DB] DATABASE_URL detected: ${DATABASE_URL:0:30}..."
+# ── 2. 生成 Prisma 客户端 ──
+echo "[Prisma] Generating client..."
+npx prisma generate
 
-  # ── 3. 生成 Prisma 客户端 ──
-  echo "[Prisma] Generating client..."
-  npx prisma generate
-
-  # ── 4. 推送表结构到数据库（幂等操作，安全重复执行）──
-  echo "[Prisma] Pushing schema to database..."
-  npx prisma db push --accept-data-loss 2>&1 || {
-    echo "[Prisma] Schema push encountered issues (may be expected on first deploy)"
-  }
-
-  echo "[Prisma] Schema sync complete"
-fi
-
-# ── 5. 构建 Next.js ──
-echo "[Next] Building application..."
+# ── 3. 构建 Next.js ──
+echo "[Next] Building..."
 npx next build
 
 echo "=== Build Complete ==="
