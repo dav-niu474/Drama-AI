@@ -670,6 +670,31 @@ export function TimelinePreview() {
   const totalDuration = sortedScenes.reduce((sum, s) => sum + s.duration, 0)
   const projectCompletion = getProjectCompletion(sortedScenes)
 
+  // Fetch scenes when project changes
+  const prevProjectIdRef = useRef(currentProject?.id)
+  useEffect(() => {
+    if (currentProject?.id !== prevProjectIdRef.current) {
+      prevProjectIdRef.current = currentProject?.id
+      // Reset selection via ref to avoid synchronous setState in effect
+      setTimeout(() => setSelectedIndex(0), 0)
+    }
+    if (currentProject) {
+      fetch('/api/scenes?projectId=' + currentProject.id)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            useDramaStore.getState().setScenes(data.scenes || [])
+            // Fetch characters too
+            fetch('/api/characters?projectId=' + currentProject.id)
+              .then(r => r.json())
+              .then(cd => { if (cd.success) useDramaStore.getState().setCharacters(cd.characters || []) })
+              .catch(() => {})
+          }
+        })
+        .catch(() => {})
+    }
+  }, [currentProject])
+
   // Clamp selected index when scenes change (computed, no effect needed)
   const clampedIndex = sortedScenes.length > 0
     ? Math.min(selectedIndex, sortedScenes.length - 1)

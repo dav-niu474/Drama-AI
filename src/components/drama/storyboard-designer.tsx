@@ -571,7 +571,7 @@ export function StoryboardDesigner() {
     }
 
     loadScenes()
-  }, [currentProject?.id, activeSceneId, setScenes])
+  }, [currentProject?.id])
 
   // Sync form data when active scene changes
   useEffect(() => {

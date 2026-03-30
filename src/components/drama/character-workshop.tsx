@@ -639,8 +639,10 @@ export default function CharacterWorkshop() {
   useEffect(() => {
     if (currentProject) {
       fetchCharacters()
+    } else {
+      setCharacters([])
     }
-  }, [currentProject])
+  }, [currentProject?.id])
 
   const fetchCharacters = async () => {
     if (!currentProject) return

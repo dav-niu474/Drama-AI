@@ -186,7 +186,7 @@ function ProjectCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
     >
-      <Card className="group overflow-hidden border-0 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+      <Card className="group cursor-pointer overflow-hidden border-0 bg-white shadow-sm transition-all duration-200 hover:shadow-md" onClick={onOpen}>
         {/* Cover Image */}
         <div className="relative aspect-video overflow-hidden">
           <Image
@@ -432,7 +432,8 @@ export function Dashboard() {
   const {
     projects,
     setProjects,
-    setCurrentProject,
+    openProject,
+    removeProject,
     currentStep,
     setCurrentStep,
   } = useDramaStore()
@@ -458,8 +459,7 @@ export function Dashboard() {
   }, [fetchProjects])
 
   const handleOpenProject = (project: DramaProject) => {
-    setCurrentProject(project)
-    setCurrentStep('script')
+    openProject(project, 'script')
   }
 
   const handleDeleteProject = async (id: string) => {
@@ -467,7 +467,7 @@ export function Dashboard() {
       const res = await fetch(`/api/projects?id=${id}`, { method: 'DELETE' })
       const data = await res.json()
       if (data.success) {
-        setProjects(projects.filter(p => p.id !== id))
+        removeProject(id)
       }
     } catch (error) {
       console.error('Delete project failed:', error)
@@ -479,8 +479,7 @@ export function Dashboard() {
       setCreateDialogOpen(true)
       return
     }
-    setCurrentProject(projects[0])
-    setCurrentStep(step)
+    openProject(projects[0], step)
   }
 
   // Stats

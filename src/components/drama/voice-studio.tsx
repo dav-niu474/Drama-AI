@@ -628,8 +628,10 @@ export default function VoiceStudio() {
   useEffect(() => {
     if (currentProject) {
       fetchScenes()
+    } else {
+      setScenes([])
     }
-  }, [currentProject])
+  }, [currentProject?.id])
 
   const fetchScenes = async () => {
     if (!currentProject) return

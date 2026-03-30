@@ -50,7 +50,7 @@ const pageVariants = {
 }
 // ─── Main Page ──────────────────────────────────────────────
 export default function Home() {
-  const { currentStep, currentProject, setCurrentStep } = useDramaStore()
+  const { currentStep, currentProject, backToDashboard } = useDramaStore()
   const [isDark, setIsDark] = useState(false)
   const toggleTheme = () => {
     setIsDark(!isDark)
@@ -114,7 +114,7 @@ export default function Home() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setCurrentStep('dashboard')}
+                onClick={() => backToDashboard()}
                 className="text-xs text-slate-500"
               >
                 ← 返回仪表板

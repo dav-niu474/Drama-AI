@@ -975,6 +975,20 @@ export function VideoFactory() {
     (s) => tasks[s.id]?.status === 'success' || s.videoUrl,
   ).length
 
+  // Fetch scenes when project changes
+  useEffect(() => {
+    if (currentProject) {
+      fetch('/api/scenes?projectId=' + currentProject.id)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) useDramaStore.getState().setScenes(data.scenes || [])
+        })
+        .catch(() => {})
+    } else {
+      useDramaStore.getState().setScenes([])
+    }
+  }, [currentProject?.id])
+
   // Cleanup polling intervals on unmount
   useEffect(() => {
     return () => {

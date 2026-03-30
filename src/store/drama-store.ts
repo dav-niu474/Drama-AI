@@ -19,6 +19,7 @@ export interface DramaProject {
   status: string
   createdAt: string
   updatedAt: string
+  _count?: { characters: number; scenes: number; episodes: number }
 }
 
 export interface Character {
@@ -71,6 +72,7 @@ interface DramaStore {
   currentProject: DramaProject | null
   setProjects: (projects: DramaProject[]) => void
   setCurrentProject: (project: DramaProject | null) => void
+  removeProject: (id: string) => void
   
   // 角色
   characters: Character[]
@@ -102,11 +104,17 @@ interface DramaStore {
   addScriptMessage: (message: {role: string; content: string}) => void
   clearScriptMessages: () => void
   
+  // 切换项目（自动清除旧数据）
+  openProject: (project: DramaProject, step?: WorkflowStep) => void
+  
+  // 返回仪表板（保留项目上下文）
+  backToDashboard: () => void
+  
   // 重置
   resetProjectData: () => void
 }
 
-export const useDramaStore = create<DramaStore>((set) => ({
+export const useDramaStore = create<DramaStore>((set, get) => ({
   // 工作流
   currentStep: 'dashboard',
   setCurrentStep: (step) => set({ currentStep: step }),
@@ -116,6 +124,10 @@ export const useDramaStore = create<DramaStore>((set) => ({
   currentProject: null,
   setProjects: (projects) => set({ projects }),
   setCurrentProject: (project) => set({ currentProject: project }),
+  removeProject: (id) => set((state) => ({
+    projects: state.projects.filter(p => p.id !== id),
+    currentProject: state.currentProject?.id === id ? null : state.currentProject,
+  })),
   
   // 角色
   characters: [],
@@ -157,7 +169,20 @@ export const useDramaStore = create<DramaStore>((set) => ({
   })),
   clearScriptMessages: () => set({ scriptMessages: [] }),
   
-  // 重置
+  // 打开项目 —— 清除旧数据，设置新项目，跳转
+  openProject: (project, step = 'script') => set({
+    currentProject: project,
+    currentStep: step,
+    characters: [],
+    scenes: [],
+    episodes: [],
+    scriptMessages: [],
+  }),
+  
+  // 返回仪表板 —— 保留项目，不清除数据
+  backToDashboard: () => set({ currentStep: 'dashboard' }),
+  
+  // 完全重置
   resetProjectData: () => set({
     characters: [],
     scenes: [],

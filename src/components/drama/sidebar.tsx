@@ -58,10 +58,15 @@ function getStepProgress(step: WorkflowStep): number {
 }
 
 // ─── Desktop Sidebar ────────────────────────────────────────
-function SidebarNav({ collapsed }: { collapsed: boolean }) {
+function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const { currentStep, setCurrentStep, currentProject } = useDramaStore()
 
   const progress = currentProject ? getStepProgress(currentStep) : 0
+
+  const handleNavClick = (step: WorkflowStep) => {
+    setCurrentStep(step)
+    onNavigate?.()
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -147,7 +152,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
             const navButton = (
               <button
                 key={item.step}
-                onClick={() => setCurrentStep(item.step)}
+                onClick={() => handleNavClick(item.step)}
                 className={cn(
                   'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                   collapsed && 'justify-center px-2',
@@ -271,6 +276,11 @@ function MobileSidebar() {
 
   const progress = currentProject ? getStepProgress(currentStep) : 0
 
+  const handleNavigate = (step: WorkflowStep) => {
+    setCurrentStep(step)
+    setOpen(false) // 关闭移动端抽屉
+  }
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -284,8 +294,7 @@ function MobileSidebar() {
       </SheetTrigger>
       <SheetContent side="left" className="w-72 bg-slate-900 p-0">
         <SheetTitle className="sr-only">导航菜单</SheetTitle>
-        <SidebarNav collapsed={false} />
-        {/* Override click behavior for mobile */}
+        <SidebarNav collapsed={false} onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>
   )
