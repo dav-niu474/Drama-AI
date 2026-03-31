@@ -1,28 +1,35 @@
 import type { NextConfig } from "next";
 
+/**
+ * 环境变量预处理
+ *
+ * Vercel 上 DATABASE_URL 可能是字面量字符串 "undefined"，不是真正的 undefined。
+ * "undefined" 是 truthy 的，所以 || 回退不会触发！必须显式判断。
+ */
+const rawDbUrl = process.env.DATABASE_URL;
+const safeDbUrl = (!rawDbUrl || rawDbUrl === "undefined")
+  ? "file:/tmp/drama-ai.db"
+  : rawDbUrl;
+
 const nextConfig: NextConfig = {
   output: "standalone",
   typescript: {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // ── 环境变量兜底 ──
-  // Prisma schema 中 env("DATABASE_URL") 在原生引擎层强制校验。
-  // 如果 Vercel 上未设置 DATABASE_URL，Next.js 注入 file: 占位值让校验通过。
-  // 实际 Turso 连接由 adapter 管理，此值不会被使用。
   env: {
-    DATABASE_URL: process.env.DATABASE_URL || "file:/tmp/drama-ai.db",
+    DATABASE_URL: safeDbUrl,
     TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL || "",
     TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN || "",
   },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**',
+        protocol: "https",
+        hostname: "**",
       },
     ],
-    unoptimized: process.env.IMAGE_UNOPTIMIZED === 'true',
+    unoptimized: process.env.IMAGE_UNOPTIMIZED === "true",
   },
 };
 
