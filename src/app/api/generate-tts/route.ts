@@ -1,4 +1,3 @@
-import '@/lib/db-env'
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
 import { db } from '@/lib/db'

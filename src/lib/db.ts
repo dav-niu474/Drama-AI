@@ -1,6 +1,3 @@
-// ⬇️ 必须在 @prisma/client 之前导入，确保 DATABASE_URL 合法
-import './db-env'
-
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'
@@ -10,6 +7,8 @@ import { createClient } from '@libsql/client'
  *
  * 本地开发：DATABASE_URL=file:./db/custom.db → 直连 SQLite
  * Vercel：  TURSO_DATABASE_URL + TURSO_AUTH_TOKEN → adapter 连 Turso
+ *           DATABASE_URL 由 next.config.ts 注入兜底值 file:/tmp/drama-ai.db
+ *           （仅用于 Prisma 原生引擎校验，adapter 覆盖实际连接）
  */
 
 const tursoUrl = process.env.TURSO_DATABASE_URL
