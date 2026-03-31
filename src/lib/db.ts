@@ -7,29 +7,19 @@ import { createClient } from '@libsql/client'
  *
  * 本地：DATABASE_URL=file:./db/custom.db → 直连 SQLite
  * Vercel：TURSO_DATABASE_URL + TURSO_AUTH_TOKEN → adapter 连 Turso
+ *         DATABASE_URL=file:/tmp/drama-ai.db（占位，由 instrumentation.ts 或 Vercel 环境变量设置）
  */
-
-// 三重防御：next.config.ts 构建注入、db.ts 模块加载、createClient 调用前
-const dbUrl = process.env.DATABASE_URL
-if (!dbUrl || dbUrl === 'undefined') {
-  process.env.DATABASE_URL = 'file:/tmp/drama-ai.db'
-}
 
 const tursoUrl = process.env.TURSO_DATABASE_URL
 const tursoToken = process.env.TURSO_AUTH_TOKEN
 
 function createPrismaClient(): PrismaClient {
-  // ── Turso ──
   if (tursoUrl && tursoUrl.startsWith('libsql:')) {
-    const libsql = createClient({
-      url: tursoUrl,
-      authToken: tursoToken,
-    })
+    const libsql = createClient({ url: tursoUrl, authToken: tursoToken })
     const adapter = new PrismaLibSql(libsql)
     return new PrismaClient({ adapter })
   }
 
-  // ── 本地 SQLite ──
   return new PrismaClient({
     log: process.env.NODE_ENV !== 'production' ? ['query'] : [],
   })
