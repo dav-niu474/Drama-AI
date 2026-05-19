@@ -7,7 +7,7 @@ import type { ProviderCategory } from '@/lib/providers'
 const DEFAULT_CONFIGS: Record<string, Record<string, unknown>> = {
   llm: {
     provider: 'openrouter',
-    modelId: 'deepseek/deepseek-chat-v3-0324:free',
+    modelId: 'deepseek/deepseek-v4-flash:free',
     temperature: 0.7,
     maxTokens: 4096,
     topP: 1.0,
