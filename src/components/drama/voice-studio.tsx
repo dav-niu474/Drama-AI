@@ -198,6 +198,7 @@ function SceneCard({
   scene,
   index,
   character,
+  characters,
   isGenerating,
   isPlaying,
   selectedSceneId,
@@ -261,7 +262,6 @@ function SceneCard({
         <Select
           value={character?.id || ''}
           onValueChange={(val) => onCharacterChange(scene.id, val)}
-          onClick={(e) => e.stopPropagation()}
         >
           <SelectTrigger className="h-8 text-xs w-full">
             <SelectValue placeholder="选择配音角色" />

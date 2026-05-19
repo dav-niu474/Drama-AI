@@ -20,7 +20,7 @@ function createPrismaClient(): PrismaClient {
   // ── Turso (adapter) ──
   if (tursoUrl && tursoUrl.startsWith('libsql:')) {
     const libsql = createClient({ url: tursoUrl, authToken: tursoToken })
-    const adapter = new PrismaLibSql(libsql)
+    const adapter = new PrismaLibSql(libsql as any)
     return new PrismaClient({ adapter })
   }
 

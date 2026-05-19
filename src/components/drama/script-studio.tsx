@@ -179,6 +179,32 @@ function formatMarkdown(text: string): React.ReactNode[] {
   let codeContent: string[] = []
   let codeLang = ''
 
+  // Helper to render bold text safely without dangerouslySetInnerHTML
+  function renderBoldText(text: string): React.ReactNode[] {
+    const parts: React.ReactNode[] = []
+    const boldRegex = /\*\*(.*?)\*\*/g
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+    let keyIdx = 0
+
+    while ((match = boldRegex.exec(text)) !== null) {
+      // Text before the bold marker
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index))
+      }
+      // Bold text
+      parts.push(<strong key={`b-${keyIdx++}`} className="font-semibold text-foreground">{match[1]}</strong>)
+      lastIndex = match.index + match[0].length
+    }
+
+    // Remaining text after last bold marker
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex))
+    }
+
+    return parts
+  }
+
   lines.forEach((line, idx) => {
     if (line.startsWith('```')) {
       if (inCodeBlock) {
@@ -214,9 +240,6 @@ function formatMarkdown(text: string): React.ReactNode[] {
       return
     }
 
-    // Bold text
-    const boldProcessed = line.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
-
     // Empty line = paragraph break
     if (line.trim() === '') {
       elements.push(<div key={idx} className="h-2" />)
@@ -225,10 +248,11 @@ function formatMarkdown(text: string): React.ReactNode[] {
 
     // List items
     if (line.match(/^[-*]\s/) || line.match(/^\d+\.\s/)) {
+      const listContent = line.replace(/^[-*]\s+|^\d+\.\s+/, '')
       elements.push(
         <div key={idx} className="flex gap-2 text-sm leading-relaxed text-muted-foreground py-0.5">
-          <span className="text-violet-400 shrink-0">{line.match(/^\d+\./) ? '•' : '•'}</span>
-          <span dangerouslySetInnerHTML={{ __html: boldProcessed.replace(/^[-*]\s+|^\d+\.\s+/, '') }} />
+          <span className="text-violet-400 shrink-0">{'•'}</span>
+          <span>{renderBoldText(listContent)}</span>
         </div>
       )
       return
@@ -236,7 +260,7 @@ function formatMarkdown(text: string): React.ReactNode[] {
 
     // Regular paragraph
     elements.push(
-      <p key={idx} className="text-sm leading-relaxed text-muted-foreground py-0.5" dangerouslySetInnerHTML={{ __html: boldProcessed }} />
+      <p key={idx} className="text-sm leading-relaxed text-muted-foreground py-0.5">{renderBoldText(line)}</p>
     )
   })
 
@@ -483,6 +507,26 @@ export default function ScriptStudio() {
     }
   }, [activeMode, scriptMessages])
 
+  // Load saved script from Episode model when project changes
+  useEffect(() => {
+    if (!currentProject) return
+    const loadSavedScript = async () => {
+      try {
+        const res = await fetch(`/api/episodes?projectId=${currentProject.id}`)
+        const data = await res.json()
+        if (data.success && data.episodes.length > 0) {
+          const savedScript = data.episodes[0].script
+          if (savedScript && savedScript.trim()) {
+            setScriptContent(savedScript)
+          }
+        }
+      } catch {
+        // Silent fail - no saved script available
+      }
+    }
+    loadSavedScript()
+  }, [currentProject?.id])
+
   // Get mode config
   const currentModeConfig = MODES.find(m => m.key === activeMode)!
 
@@ -515,7 +559,7 @@ export default function ScriptStudio() {
           mode: 'fullscript',
           prompt: scriptPrompt,
           characters: characters.map(c => `${c.name}(${c.role})`).join('、'),
-          existingScript: scriptContent || undefined,
+          existingScript: scriptContent || '',
         }
         break
       case 'scenes':
@@ -609,11 +653,50 @@ export default function ScriptStudio() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Save script (local state)
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+  // Save script to database (Episode model)
+  const handleSave = useCallback(async () => {
+    if (!currentProject || !scriptContent.trim()) return
+
+    try {
+      // Check if an episode already exists for this project
+      const res = await fetch(`/api/episodes?projectId=${currentProject.id}`)
+      const data = await res.json()
+
+      if (data.success && data.episodes.length > 0) {
+        // Update the first episode
+        const episode = data.episodes[0]
+        await fetch('/api/episodes', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: episode.id,
+            script: scriptContent,
+            title: episode.title || `${currentProject.name} - 剧本`,
+          }),
+        })
+      } else {
+        // Create a new episode
+        await fetch('/api/episodes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: currentProject.id,
+            title: `${currentProject.name} - 剧本`,
+            episodeNo: 1,
+            script: scriptContent,
+          }),
+        })
+      }
+
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      console.error('Failed to save script:', err)
+      // Fallback to local save indication
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
+  }, [currentProject, scriptContent])
 
   // Clear editor
   const handleClear = () => {
@@ -923,7 +1006,7 @@ export default function ScriptStudio() {
 
               {/* Message History */}
               <div className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full" ref={scrollRef}>
+                <ScrollArea className="h-full">
                   <div className="px-3 py-3 space-y-4" ref={scrollRef}>
                     {scriptMessages.length === 0 && (
                       <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50">

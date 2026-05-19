@@ -101,8 +101,8 @@ interface DramaStore {
   setGeneratingStep: (step: string) => void
   
   // 对话状态
-  scriptMessages: Array<{role: string; content: string}>
-  addScriptMessage: (message: {role: string; content: string}) => void
+  scriptMessages: Array<{role: string; content: string; mode?: string}>
+  addScriptMessage: (message: {role: string; content: string; mode?: string}) => void
   clearScriptMessages: () => void
   
   // 切换项目（自动清除旧数据）

@@ -315,18 +315,18 @@ function AIBatchGenerateDialog({
       }
 
       // Validate and normalize
-      scenes = scenes.map((s: Record<string, unknown>, i: number) => ({
-        title: s.title || `场景 ${i + 1}`,
-        description: s.description || '',
-        dialogue: s.dialogue || '',
-        cameraAngle: CAMERA_OPTIONS.includes(s.cameraAngle as string) ? s.cameraAngle : '中景',
-        timeOfDay: TIME_OPTIONS.includes(s.timeOfDay as string) ? s.timeOfDay : '白天',
-        mood: MOOD_OPTIONS.includes(s.mood as string) ? s.mood : '平静',
-        location: s.location || '',
+      const normalizedScenes = (scenes as unknown as Record<string, unknown>[]).map((s, i) => ({
+        title: (s.title as string) || `场景 ${i + 1}`,
+        description: (s.description as string) || '',
+        dialogue: (s.dialogue as string) || '',
+        cameraAngle: CAMERA_OPTIONS.includes(s.cameraAngle as string) ? (s.cameraAngle as string) : '中景',
+        timeOfDay: TIME_OPTIONS.includes(s.timeOfDay as string) ? (s.timeOfDay as string) : '白天',
+        mood: MOOD_OPTIONS.includes(s.mood as string) ? (s.mood as string) : '平静',
+        location: (s.location as string) || '',
         duration: typeof s.duration === 'number' ? s.duration : 5,
-      }))
+      })) as ParsedScene[]
 
-      setParsedScenes(scenes)
+      setParsedScenes(normalizedScenes)
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败，请重试')
     } finally {
@@ -699,7 +699,9 @@ export function StoryboardDesigner() {
     if (!currentProject) return
 
     try {
-      const baseSortOrder = scenes.length
+      // Get current scenes count from store for accurate base sort order
+      const currentScenesCount = useDramaStore.getState().scenes.length
+      const baseSortOrder = currentScenesCount
 
       const promises = parsedScenes.map((scene, i) =>
         fetch('/api/scenes', {
@@ -721,27 +723,23 @@ export function StoryboardDesigner() {
       )
 
       const results = await Promise.all(promises)
+      let firstSceneId: string | null = null
       for (const res of results) {
         const data = await res.json()
         if (data.success) {
           addScene(data.scene)
+          if (!firstSceneId) firstSceneId = data.scene.id
         }
       }
 
-      // Activate the first imported scene
-      if (scenes.length === 0 && parsedScenes.length > 0) {
-        // After the scenes are added, we need to get the first one
-        setTimeout(() => {
-          const updatedScenes = scenes // this will be stale but the next render will have the new scenes
-          if (updatedScenes.length > 0) {
-            setActiveSceneId(updatedScenes[0].id)
-          }
-        }, 100)
+      // Activate the first imported scene using the server-returned ID
+      if (firstSceneId) {
+        setActiveSceneId(firstSceneId)
       }
     } catch (err) {
       console.error('Failed to import scenes:', err)
     }
-  }, [currentProject, scenes, addScene, setScenes])
+  }, [currentProject, addScene])
 
   // ─── Reorder with keyboard ───────────────────────────────
 

@@ -220,7 +220,7 @@ function CharacterCard({
       className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-colors duration-200 ${genderBorder}`}
     >
       {/* Avatar */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-b ${genderAccent}">
+      <div className={`relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-b ${genderAccent}`}>
         {character.avatarUrl ? (
           <img
             src={character.avatarUrl}
@@ -789,7 +789,7 @@ export default function CharacterWorkshop() {
   const handleGenerateAvatarInDialog = async () => {
     const imageUrl = await generateAvatar(formData.appearance)
     if (imageUrl) {
-      setFormData((prev) => ({ ...prev, avatarUrl }))
+      setFormData((prev) => ({ ...prev, avatarUrl: imageUrl }))
       toast.success('头像已生成')
     }
   }

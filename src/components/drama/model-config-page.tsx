@@ -113,13 +113,13 @@ const CATEGORIES = [
 ] as const
 
 const VOICE_OPTIONS = [
-  { value: 'tongtong', label: '童童 (甜美女声)' },
-  { value: 'zhiyan', label: '知燕 (温柔女声)' },
-  { value: 'sicheng', label: '思诚 (知性男声)' },
-  { value: 'zhida', label: '知达 (沉稳男声)' },
-  { value: 'zhiyu', label: '知语 (标准女声)' },
-  { value: 'zhiwen', label: '知文 (新闻男声)' },
-  { value: 'zhimiao', label: '知淼 (儿童声音)' },
+  { value: 'tongtong', label: 'tongtong (温暖亲切)' },
+  { value: 'chuichui', label: 'chuichui (活泼可爱)' },
+  { value: 'xiaochen', label: 'xiaochen (沉稳专业)' },
+  { value: 'jam', label: 'jam (英音绅士)' },
+  { value: 'kazi', label: 'kazi (清晰标准)' },
+  { value: 'douji', label: 'douji (自然流畅)' },
+  { value: 'luodo', label: 'luodo (富有感染力)' },
 ]
 
 const IMAGE_SIZES = [

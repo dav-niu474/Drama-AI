@@ -772,26 +772,57 @@ export function TimelinePreview() {
     }
   }
 
-  function handleAddScene() {
-    const newScene: DramaScene = {
-      id: `scene-${Date.now()}`,
-      projectId: currentProject!.id,
-      episodeId: null,
-      title: `场景 ${sortedScenes.length + 1}`,
-      description: '',
-      dialogue: '',
-      location: '',
-      timeOfDay: '',
-      mood: '',
-      cameraAngle: '',
-      imageUrl: '',
-      videoUrl: '',
-      audioUrl: '',
-      sortOrder: sortedScenes.length,
-      duration: 5,
+  async function handleAddScene() {
+    if (!currentProject) return
+
+    const sortOrder = sortedScenes.length
+
+    try {
+      const res = await fetch('/api/scenes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: currentProject.id,
+          title: `场景 ${sortOrder + 1}`,
+          description: '',
+          dialogue: '',
+          location: '',
+          timeOfDay: '白天',
+          mood: '平静',
+          cameraAngle: '中景',
+          sortOrder,
+          duration: 5,
+        }),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        addScene(data.scene)
+        setSelectedIndex(sortOrder)
+      }
+    } catch (err) {
+      console.error('Failed to create scene:', err)
+      // Fallback: create locally (non-persisted)
+      const newScene: DramaScene = {
+        id: `scene-${Date.now()}`,
+        projectId: currentProject!.id,
+        episodeId: null,
+        title: `场景 ${sortOrder + 1}`,
+        description: '',
+        dialogue: '',
+        location: '',
+        timeOfDay: '',
+        mood: '',
+        cameraAngle: '',
+        imageUrl: '',
+        videoUrl: '',
+        audioUrl: '',
+        sortOrder,
+        duration: 5,
+      }
+      addScene(newScene)
+      setSelectedIndex(sortOrder)
     }
-    addScene(newScene)
-    setSelectedIndex(sortedScenes.length)
   }
 
   // ─── Empty States ──────────────────────────────────────────
