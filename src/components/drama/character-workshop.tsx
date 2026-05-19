@@ -62,15 +62,9 @@ const GENDER_OPTIONS = [
   { value: '女', label: '女' },
 ]
 
-const VOICE_OPTIONS = [
-  { value: 'tongtong', label: 'tongtong - 温暖亲切' },
-  { value: 'chuichui', label: 'chuichui - 活泼可爱' },
-  { value: 'xiaochen', label: 'xiaochen - 沉稳专业' },
-  { value: 'jam', label: 'jam - 英音绅士' },
-  { value: 'kazi', label: 'kazi - 清晰标准' },
-  { value: 'douji', label: 'douji - 自然流畅' },
-  { value: 'luodo', label: 'luodo - 富有感染力' },
-]
+import { VOICE_OPTIONS, getVoiceLabel } from '@/lib/constants'
+
+// VOICE_OPTIONS is now imported from shared constants
 
 const SAMPLE_CHARACTERS = [
   {
@@ -205,7 +199,8 @@ function CharacterCard({
   isGeneratingAvatar,
 }: CharacterCardProps) {
   const isFemale = character.gender === '女'
-  const genderAccent = isFemale ? 'from-pink-50 to-rose-50' : 'from-teal-50 to-cyan-50'
+  // Bug#1 fix: use inline conditional classes instead of string interpolation
+  // so Tailwind JIT can detect all class names at build time
   const genderBorder = isFemale
     ? 'hover:border-pink-200'
     : 'hover:border-teal-200'
@@ -220,7 +215,7 @@ function CharacterCard({
       className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-colors duration-200 ${genderBorder}`}
     >
       {/* Avatar */}
-      <div className={`relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-b ${genderAccent}`}>
+      <div className={`relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-b ${isFemale ? 'from-pink-50 to-rose-50' : 'from-teal-50 to-cyan-50'}`}>
         {character.avatarUrl ? (
           <img
             src={character.avatarUrl}
@@ -228,7 +223,7 @@ function CharacterCard({
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className={`flex h-full w-full items-center justify-center bg-gradient-to-b ${genderAccent}`}>
+          <div className={`flex h-full w-full items-center justify-center bg-gradient-to-b ${isFemale ? 'from-pink-50 to-rose-50' : 'from-teal-50 to-cyan-50'}`}>
             <User className="h-16 w-16 text-muted-foreground/30" />
           </div>
         )}
@@ -287,7 +282,7 @@ function CharacterCard({
         {character.voiceType && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Mic className="h-3 w-3" />
-            <span>{VOICE_OPTIONS.find((v) => v.value === character.voiceType)?.label ?? character.voiceType}</span>
+            <span>{getVoiceLabel(character.voiceType)}</span>
           </div>
         )}
 
@@ -380,9 +375,7 @@ function CharacterFormDialog({
   isSaving,
 }: CharacterFormDialogProps) {
   const isFemale = formData.gender === '女'
-  const avatarGradient = isFemale
-    ? 'from-pink-50 to-rose-50'
-    : 'from-teal-50 to-cyan-50'
+  // Bug#1 fix: inline classes instead of string variable
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -412,7 +405,7 @@ function CharacterFormDialog({
           {/* Left: Avatar area */}
           <div className="flex flex-col items-center gap-3">
             <div
-              className={`relative aspect-[3/4] w-full overflow-hidden rounded-xl border-2 border-dashed border-muted-foreground/20 bg-gradient-to-b ${avatarGradient}`}
+              className={`relative aspect-[3/4] w-full overflow-hidden rounded-xl border-2 border-dashed border-muted-foreground/20 bg-gradient-to-b ${isFemale ? 'from-pink-50 to-rose-50' : 'from-teal-50 to-cyan-50'}`}
             >
               {formData.avatarUrl ? (
                 <img

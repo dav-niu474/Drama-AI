@@ -54,17 +54,9 @@ import { toast } from 'sonner'
 
 // ── Constants ──────────────────────────────────────────────
 
-const VOICE_OPTIONS = [
-  { value: 'tongtong', label: 'tongtong', desc: '温暖亲切', color: 'bg-rose-100 text-rose-700 border-rose-200' },
-  { value: 'chuichui', label: 'chuichui', desc: '活泼可爱', color: 'bg-pink-100 text-pink-700 border-pink-200' },
-  { value: 'xiaochen', label: 'xiaochen', desc: '沉稳专业', color: 'bg-slate-100 text-slate-700 border-slate-200' },
-  { value: 'jam', label: 'jam', desc: '英音绅士', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  { value: 'kazi', label: 'kazi', desc: '清晰标准', color: 'bg-sky-100 text-sky-700 border-sky-200' },
-  { value: 'douji', label: 'douji', desc: '自然流畅', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-  { value: 'luodo', label: 'luodo', desc: '富有感染力', color: 'bg-violet-100 text-violet-700 border-violet-200' },
-] as const
+import { VOICE_OPTIONS, getVoiceInfo, type VoiceType } from '@/lib/constants'
 
-type VoiceType = (typeof VOICE_OPTIONS)[number]['value']
+// VOICE_OPTIONS, VoiceType, and getVoiceInfo are now imported from shared constants
 
 interface SceneCharacterMap {
   [sceneId: string]: string // characterId
@@ -78,9 +70,7 @@ interface BatchSceneStatus {
 
 // ── Helper functions ───────────────────────────────────────
 
-function getVoiceInfo(voiceType: string) {
-  return VOICE_OPTIONS.find((v) => v.value === voiceType) ?? VOICE_OPTIONS[0]
-}
+// getVoiceInfo is now imported from shared constants
 
 function truncateText(text: string, maxLen: number) {
   if (!text) return ''

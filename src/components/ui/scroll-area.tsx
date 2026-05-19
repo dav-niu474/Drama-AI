@@ -5,11 +5,18 @@ import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
 
-function ScrollArea({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+// Bug#7 fix: Add forwardRef support so consumers can ref the actual scroll container
+const ScrollArea = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof ScrollAreaPrimitive.Root>
+>(({ className, children, ...props }, ref) => {
+  const viewportRef = React.useRef<HTMLDivElement>(null)
+
+  React.useImperativeHandle(ref, () => {
+    // Return the viewport element since that's the actual scrolling container
+    return viewportRef.current as HTMLDivElement
+  })
+
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
@@ -17,6 +24,7 @@ function ScrollArea({
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
+        ref={viewportRef}
         data-slot="scroll-area-viewport"
         className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
       >
@@ -26,7 +34,9 @@ function ScrollArea({
       <ScrollAreaPrimitive.Corner />
     </ScrollAreaPrimitive.Root>
   )
-}
+})
+
+ScrollArea.displayName = "ScrollArea"
 
 function ScrollBar({
   className,

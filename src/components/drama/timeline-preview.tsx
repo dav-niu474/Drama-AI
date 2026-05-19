@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDramaStore, type DramaScene } from '@/store/drama-store'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -802,26 +803,8 @@ export function TimelinePreview() {
       }
     } catch (err) {
       console.error('Failed to create scene:', err)
-      // Fallback: create locally (non-persisted)
-      const newScene: DramaScene = {
-        id: `scene-${Date.now()}`,
-        projectId: currentProject!.id,
-        episodeId: null,
-        title: `场景 ${sortOrder + 1}`,
-        description: '',
-        dialogue: '',
-        location: '',
-        timeOfDay: '',
-        mood: '',
-        cameraAngle: '',
-        imageUrl: '',
-        videoUrl: '',
-        audioUrl: '',
-        sortOrder,
-        duration: 5,
-      }
-      addScene(newScene)
-      setSelectedIndex(sortOrder)
+      // Bug#6 fix: Show error instead of creating non-persisted local scene
+      toast.error('创建场景失败，请重试')
     }
   }
 

@@ -49,6 +49,7 @@ import {
 } from '@/components/ui/tooltip'
 import { useDramaStore, type WorkflowStep } from '@/store/drama-store'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type ScriptMode = 'brainstorm' | 'fullscript' | 'scenes' | 'refine' | 'chat'
@@ -490,7 +491,7 @@ export default function ScriptStudio() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLTextAreaElement>(null)
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages (Bug#7 fix: use ScrollArea ref)
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -665,7 +666,7 @@ export default function ScriptStudio() {
       if (data.success && data.episodes.length > 0) {
         // Update the first episode
         const episode = data.episodes[0]
-        await fetch('/api/episodes', {
+        const putRes = await fetch('/api/episodes', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -674,9 +675,14 @@ export default function ScriptStudio() {
             title: episode.title || `${currentProject.name} - 剧本`,
           }),
         })
+        const putData = await putRes.json()
+        if (!putData.success) {
+          toast.error(putData.error || '保存失败')
+          return
+        }
       } else {
         // Create a new episode
-        await fetch('/api/episodes', {
+        const postRes = await fetch('/api/episodes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -686,15 +692,19 @@ export default function ScriptStudio() {
             script: scriptContent,
           }),
         })
+        const postData = await postRes.json()
+        if (!postData.success) {
+          toast.error(postData.error || '保存失败')
+          return
+        }
       }
 
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
       console.error('Failed to save script:', err)
-      // Fallback to local save indication
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      // Bug#5 fix: Don't show "saved" indication on failure
+      toast.error('保存失败，请重试')
     }
   }, [currentProject, scriptContent])
 
@@ -1006,8 +1016,8 @@ export default function ScriptStudio() {
 
               {/* Message History */}
               <div className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="px-3 py-3 space-y-4" ref={scrollRef}>
+                <ScrollArea className="h-full" ref={scrollRef}>
+                  <div className="px-3 py-3 space-y-4">
                     {scriptMessages.length === 0 && (
                       <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50">
                         <MessageCircle className="size-8 mb-3" />

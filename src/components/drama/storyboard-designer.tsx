@@ -699,16 +699,22 @@ export function StoryboardDesigner() {
     if (!currentProject) return
 
     try {
-      // Get current scenes count from store for accurate base sort order
-      const currentScenesCount = useDramaStore.getState().scenes.length
-      const baseSortOrder = currentScenesCount
+      // Bug#8 fix: Read fresh project ID from store to avoid stale closure
+      const freshProject = useDramaStore.getState().currentProject
+      if (!freshProject) return
 
-      const promises = parsedScenes.map((scene, i) =>
-        fetch('/api/scenes', {
+      // Bug#8 fix: Use sequential creation to avoid sort order collisions
+      // from parallel requests all using the same baseSortOrder
+      const currentScenesCount = useDramaStore.getState().scenes.length
+      let baseSortOrder = currentScenesCount
+
+      let firstSceneId: string | null = null
+      for (const scene of parsedScenes) {
+        const res = await fetch('/api/scenes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            projectId: currentProject.id,
+            projectId: freshProject.id,
             title: scene.title,
             description: scene.description,
             dialogue: scene.dialogue,
@@ -716,19 +722,15 @@ export function StoryboardDesigner() {
             timeOfDay: scene.timeOfDay,
             mood: scene.mood,
             cameraAngle: scene.cameraAngle,
-            sortOrder: baseSortOrder + i,
+            sortOrder: baseSortOrder,
             duration: scene.duration,
           }),
         })
-      )
-
-      const results = await Promise.all(promises)
-      let firstSceneId: string | null = null
-      for (const res of results) {
         const data = await res.json()
         if (data.success) {
           addScene(data.scene)
           if (!firstSceneId) firstSceneId = data.scene.id
+          baseSortOrder++ // increment for next scene
         }
       }
 

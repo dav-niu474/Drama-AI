@@ -112,15 +112,9 @@ const CATEGORIES = [
   },
 ] as const
 
-const VOICE_OPTIONS = [
-  { value: 'tongtong', label: 'tongtong (温暖亲切)' },
-  { value: 'chuichui', label: 'chuichui (活泼可爱)' },
-  { value: 'xiaochen', label: 'xiaochen (沉稳专业)' },
-  { value: 'jam', label: 'jam (英音绅士)' },
-  { value: 'kazi', label: 'kazi (清晰标准)' },
-  { value: 'douji', label: 'douji (自然流畅)' },
-  { value: 'luodo', label: 'luodo (富有感染力)' },
-]
+import { VOICE_OPTIONS, getVoiceLabel } from '@/lib/constants'
+
+// VOICE_OPTIONS is now imported from shared constants
 
 const IMAGE_SIZES = [
   { value: '864x1152', label: '864×1152 (竖版/角色)' },
@@ -837,7 +831,7 @@ function TTSConfig({
           <SelectContent>
             {VOICE_OPTIONS.map(v => (
               <SelectItem key={v.value} value={v.value}>
-                {v.label}
+                {getVoiceLabel(v.value)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -970,8 +964,8 @@ function TTSConfig({
                 <Mic className="size-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-slate-900">{v.value}</p>
-                <p className="truncate text-[10px] text-slate-500">{v.label}</p>
+                <p className="truncate text-xs font-medium text-slate-900">{v.label}</p>
+                <p className="truncate text-[10px] text-slate-500">{getVoiceLabel(v.value)}</p>
               </div>
               {(config.defaultVoice as string) === v.value && (
                 <Check className="size-3.5 text-amber-500" />

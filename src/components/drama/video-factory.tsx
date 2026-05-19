@@ -981,7 +981,26 @@ export function VideoFactory() {
       fetch('/api/scenes?projectId=' + currentProject.id)
         .then(res => res.json())
         .then(data => {
-          if (data.success) useDramaStore.getState().setScenes(data.scenes || [])
+          if (data.success) {
+            const scenes = data.scenes || []
+            useDramaStore.getState().setScenes(scenes)
+
+            // Bug#3 fix: Recover video task states from DB
+            // Scenes with videoUrl should show as 'success', those without remain 'idle'
+            const recoveredTasks: Record<string, VideoTask> = {}
+            for (const scene of scenes) {
+              if (scene.videoUrl) {
+                recoveredTasks[scene.id] = {
+                  sceneId: scene.id,
+                  taskId: null,
+                  status: 'success',
+                  progress: 100,
+                  videoUrl: scene.videoUrl,
+                }
+              }
+            }
+            setTasks(prev => ({ ...recoveredTasks, ...prev }))
+          }
         })
         .catch(() => {})
     } else {
