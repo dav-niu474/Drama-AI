@@ -62,3 +62,4 @@ public/uploads/
 
 # Mini services (runtime only)
 mini-services/*/node_modules
+.env*.local
