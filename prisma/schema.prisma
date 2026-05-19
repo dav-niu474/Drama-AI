@@ -13,6 +13,9 @@ datasource db {
 model ModelConfig {
   id        String   @id @default(cuid())
   category  String   @unique // llm / image / tts / video
+  provider  String   @default("z-ai") // z-ai / openrouter / siliconflow / replicate / ...
+  modelId   String   @default("default") // specific model ID
+  apiKey    String   @default("") // user-provided API key (empty = use env var)
   config    String   @default("{}") // JSON 配置参数
   enabled   Boolean  @default(true)
   updatedAt DateTime @updatedAt

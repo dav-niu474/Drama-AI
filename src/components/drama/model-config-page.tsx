@@ -11,8 +11,6 @@ import {
   RotateCcw,
   Save,
   Check,
-  AlertCircle,
-  ChevronRight,
   Sparkles,
   Zap,
   Shield,
@@ -25,10 +23,16 @@ import {
   Film,
   MonitorPlay,
   Timer,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  ExternalLink,
+  Key,
+  Server,
+  Cpu,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -56,20 +60,40 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
+import { VOICE_OPTIONS, getVoiceLabel } from '@/lib/constants'
 
 // ─── Types ─────────────────────────────────────────────────
-interface ModelConfig {
+interface ModelConfigRecord {
   id: string
   category: string
+  provider: string
+  modelId: string
+  apiKey: string
   config: Record<string, unknown>
   enabled: boolean
 }
 
 interface AllConfigs {
-  llm: ModelConfig
-  image: ModelConfig
-  tts: ModelConfig
-  video: ModelConfig
+  llm: ModelConfigRecord
+  image: ModelConfigRecord
+  tts: ModelConfigRecord
+  video: ModelConfigRecord
+}
+
+interface ProviderInfo {
+  id: string
+  name: string
+  categories: string[]
+  envKey: string
+  website: string
+  models: ModelOption[]
+}
+
+interface ModelOption {
+  id: string
+  name: string
+  free?: boolean
+  contextLength?: number
 }
 
 // ─── Constants ──────────────────────────────────────────────
@@ -112,10 +136,6 @@ const CATEGORIES = [
   },
 ] as const
 
-import { VOICE_OPTIONS, getVoiceLabel } from '@/lib/constants'
-
-// VOICE_OPTIONS is now imported from shared constants
-
 const IMAGE_SIZES = [
   { value: '864x1152', label: '864×1152 (竖版/角色)' },
   { value: '1152x864', label: '1152×864 (横版/场景)' },
@@ -138,8 +158,15 @@ export function ModelConfigPage() {
   const [saving, setSaving] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('llm')
 
+  // Provider info for each category
+  const [providerMap, setProviderMap] = useState<Record<string, ProviderInfo[]>>({})
+
   // 临时编辑状态
   const [editConfigs, setEditConfigs] = useState<Record<string, Record<string, unknown>>>({})
+  // Provider/modelId/apiKey 编辑状态
+  const [editProviders, setEditProviders] = useState<Record<string, string>>({})
+  const [editModelIds, setEditModelIds] = useState<Record<string, string>>({})
+  const [editApiKeys, setEditApiKeys] = useState<Record<string, string>>({})
 
   // 加载配置
   const fetchConfigs = useCallback(async () => {
@@ -150,10 +177,22 @@ export function ModelConfigPage() {
         setConfigs(data.configs)
         // 初始化编辑状态
         const edits: Record<string, Record<string, unknown>> = {}
+        const provEdits: Record<string, string> = {}
+        const modelEdits: Record<string, string> = {}
+        const keyEdits: Record<string, string> = {}
+
         for (const [key, val] of Object.entries(data.configs)) {
-          edits[key] = (val as ModelConfig).config
+          const record = val as ModelConfigRecord
+          edits[key] = record.config
+          provEdits[key] = record.provider || 'z-ai'
+          modelEdits[key] = record.modelId || 'default'
+          // Don't prefill the apiKey input for security - show masked if set
+          keyEdits[key] = record.apiKey ? '••••••••' : ''
         }
         setEditConfigs(edits)
+        setEditProviders(provEdits)
+        setEditModelIds(modelEdits)
+        setEditApiKeys(keyEdits)
       }
     } catch (error) {
       console.error('Failed to load configs:', error)
@@ -163,9 +202,41 @@ export function ModelConfigPage() {
     }
   }, [])
 
+  // 加载供应商列表
+  const fetchProviders = useCallback(async (category: string) => {
+    try {
+      const res = await fetch(`/api/model-config?providers=1&category=${category}`)
+      const data = await res.json()
+      if (data.success && data.providers) {
+        setProviderMap(prev => ({ ...prev, [category]: data.providers }))
+      }
+    } catch (error) {
+      console.error('Failed to load providers:', error)
+    }
+  }, [])
+
   useEffect(() => {
     fetchConfigs()
   }, [fetchConfigs])
+
+  useEffect(() => {
+    // Fetch providers for the active tab
+    fetchProviders(activeTab)
+  }, [activeTab, fetchProviders])
+
+  // 获取当前供应商的模型列表
+  const getCurrentModels = useCallback((category: string): ModelOption[] => {
+    const providers = providerMap[category] || []
+    const providerId = editProviders[category] || 'z-ai'
+    const provider = providers.find(p => p.id === providerId)
+    if (!provider) return []
+    // Sort: free models first
+    return [...provider.models].sort((a, b) => {
+      if (a.free && !b.free) return -1
+      if (!a.free && b.free) return 1
+      return a.name.localeCompare(b.name)
+    })
+  }, [providerMap, editProviders])
 
   // 保存单个配置
   const saveConfig = async (category: string) => {
@@ -173,18 +244,30 @@ export function ModelConfigPage() {
     try {
       const config = editConfigs[category]
       const enabled = configs?.[category]?.enabled ?? true
+      const provider = editProviders[category]
+      const modelId = editModelIds[category]
+      // Only send apiKey if user changed it (not the masked placeholder)
+      const apiKeyInput = editApiKeys[category]
+      const apiKeyToSend = apiKeyInput === '••••••••' ? undefined : apiKeyInput
 
       const res = await fetch('/api/model-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, config, enabled }),
+        body: JSON.stringify({
+          category,
+          config,
+          enabled,
+          provider,
+          modelId,
+          ...(apiKeyToSend !== undefined && { apiKey: apiKeyToSend }),
+        }),
       })
       const data = await res.json()
       if (data.success) {
         toast.success(`${CATEGORIES.find(c => c.key === category)?.label}配置已保存`)
         fetchConfigs()
       } else {
-        toast.error('保存失败')
+        toast.error(data.error || '保存失败')
       }
     } catch {
       toast.error('保存配置失败')
@@ -197,10 +280,13 @@ export function ModelConfigPage() {
   const toggleEnabled = async (category: string, enabled: boolean) => {
     try {
       const config = editConfigs[category]
+      const provider = editProviders[category]
+      const modelId = editModelIds[category]
+
       const res = await fetch('/api/model-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, config, enabled }),
+        body: JSON.stringify({ category, config, enabled, provider, modelId }),
       })
       const data = await res.json()
       if (data.success) {
@@ -241,10 +327,41 @@ export function ModelConfigPage() {
     }))
   }
 
+  // 更新供应商
+  const updateProvider = (category: string, providerId: string) => {
+    setEditProviders(prev => ({ ...prev, [category]: providerId }))
+    // Reset modelId to first available model for this provider
+    const providers = providerMap[category] || []
+    const provider = providers.find(p => p.id === providerId)
+    if (provider && provider.models.length > 0) {
+      // Pick first free model if available, else first model
+      const firstModel = provider.models.find(m => m.free) || provider.models[0]
+      setEditModelIds(prev => ({ ...prev, [category]: firstModel.id }))
+    } else {
+      setEditModelIds(prev => ({ ...prev, [category]: 'default' }))
+    }
+    // Clear apiKey when changing provider
+    setEditApiKeys(prev => ({ ...prev, [category]: '' }))
+  }
+
   // 检查是否有未保存的更改
   const hasChanges = (category: string) => {
-    if (!configs?.[category]) return false
-    return JSON.stringify(editConfigs[category]) !== JSON.stringify(configs[category].config)
+    if (!configs?.[category]) return true
+    const original = configs[category] as ModelConfigRecord
+    const configChanged = JSON.stringify(editConfigs[category]) !== JSON.stringify(original.config)
+    const providerChanged = (editProviders[category] || 'z-ai') !== (original.provider || 'z-ai')
+    const modelChanged = (editModelIds[category] || 'default') !== (original.modelId || 'default')
+    const keyInput = editApiKeys[category]
+    const keyChanged = keyInput !== '••••••••' && keyInput !== '' && keyInput !== original.apiKey
+    return configChanged || providerChanged || modelChanged || keyChanged
+  }
+
+  // 获取供应商的环境变量名
+  const getEnvKey = (category: string): string => {
+    const providers = providerMap[category] || []
+    const providerId = editProviders[category] || 'z-ai'
+    const provider = providers.find(p => p.id === providerId)
+    return provider?.envKey || ''
   }
 
   if (loading) {
@@ -277,7 +394,7 @@ export function ModelConfigPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">模型配置</h1>
-            <p className="text-sm text-slate-500">自定义AI模型参数，优化创作体验</p>
+            <p className="text-sm text-slate-500">自定义AI供应商与模型参数，优化创作体验</p>
           </div>
         </div>
       </motion.div>
@@ -287,6 +404,9 @@ export function ModelConfigPage() {
         {CATEGORIES.map((cat) => {
           const isEnabled = configs[cat.key]?.enabled ?? true
           const Icon = cat.icon
+          const provider = editProviders[cat.key] || 'z-ai'
+          const providerList = providerMap[cat.key] || []
+          const providerName = providerList.find(p => p.id === provider)?.name || provider
           return (
             <motion.div
               key={cat.key}
@@ -320,7 +440,7 @@ export function ModelConfigPage() {
                 </div>
                 <div className="mt-3">
                   <h3 className="text-sm font-semibold text-slate-900">{cat.label}</h3>
-                  <p className="mt-0.5 text-xs text-slate-500">{cat.desc}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{providerName}</p>
                 </div>
                 {hasChanges(cat.key) && (
                   <div className="absolute right-2 top-2">
@@ -397,7 +517,7 @@ export function ModelConfigPage() {
                     size="sm"
                     className="h-7 gap-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-xs text-white shadow-sm hover:shadow-md"
                     onClick={() => saveConfig(activeTab)}
-                    disabled={!hasChanges(activeTab) || saving === activeTab}
+                    disabled={saving === activeTab}
                   >
                     {saving === activeTab ? (
                       <div className="size-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -419,6 +539,21 @@ export function ModelConfigPage() {
                   exit={{ opacity: 0, x: -10 }}
                   transition={{ duration: 0.2 }}
                 >
+                  {/* Provider & Model Selection */}
+                  <ProviderModelSelector
+                    category={activeTab}
+                    providerId={editProviders[activeTab] || 'z-ai'}
+                    modelId={editModelIds[activeTab] || 'default'}
+                    apiKey={editApiKeys[activeTab] || ''}
+                    providers={providerMap[activeTab] || []}
+                    onProviderChange={(id) => updateProvider(activeTab, id)}
+                    onModelChange={(id) => setEditModelIds(prev => ({ ...prev, [activeTab]: id }))}
+                    onApiKeyChange={(key) => setEditApiKeys(prev => ({ ...prev, [activeTab]: key }))}
+                  />
+
+                  <Separator className="my-6" />
+
+                  {/* Category-specific parameters */}
                   {activeTab === 'llm' && (
                     <LLMConfig
                       config={editConfigs.llm || {}}
@@ -463,9 +598,10 @@ export function ModelConfigPage() {
               <div className="space-y-1">
                 <p className="text-sm font-medium text-slate-700">配置说明</p>
                 <ul className="space-y-0.5 text-xs text-slate-500">
-                  <li>• 修改参数后点击"保存"按钮使其生效</li>
-                  <li>• 禁用某个模型类型后，对应功能模块将使用默认配置</li>
-                  <li>• 重置操作将恢复该分类的所有参数为系统默认值</li>
+                  <li>• 选择供应商和模型后点击"保存"按钮使其生效</li>
+                  <li>• API Key 留空则使用环境变量中的配置</li>
+                  <li>• 免费模型标记为 <Badge variant="outline" className="ml-0.5 text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">免费</Badge> 无需付费即可使用</li>
+                  <li>• OpenRouter 支持刷新获取最新模型列表</li>
                   <li>• 温度值越高，AI生成内容越有创造性；越低则越稳定可控</li>
                 </ul>
               </div>
@@ -473,6 +609,226 @@ export function ModelConfigPage() {
           </CardContent>
         </Card>
       </motion.div>
+    </div>
+  )
+}
+
+// ─── Provider & Model Selector ─────────────────────────────
+function ProviderModelSelector({
+  category,
+  providerId,
+  modelId,
+  apiKey,
+  providers,
+  onProviderChange,
+  onModelChange,
+  onApiKeyChange,
+}: {
+  category: string
+  providerId: string
+  modelId: string
+  apiKey: string
+  providers: ProviderInfo[]
+  onProviderChange: (id: string) => void
+  onModelChange: (id: string) => void
+  onApiKeyChange: (key: string) => void
+}) {
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const currentProvider = providers.find(p => p.id === providerId)
+  const models = currentProvider?.models || []
+  // Sort: free first
+  const sortedModels = [...models].sort((a, b) => {
+    if (a.free && !b.free) return -1
+    if (!a.free && b.free) return 1
+    return a.name.localeCompare(b.name)
+  })
+
+  const envKey = currentProvider?.envKey || ''
+  const hasEnvKey = false // We can't check env vars from client, show hint only
+
+  // Refresh models from OpenRouter
+  const refreshModels = async () => {
+    if (providerId !== 'openrouter') return
+    setRefreshing(true)
+    try {
+      const res = await fetch('/api/openrouter-models')
+      const data = await res.json()
+      if (data.success && data.models) {
+        toast.success(`已获取 ${data.models.length} 个模型`)
+        // Update the provider map with live models
+        // This is handled by re-fetching providers
+      } else {
+        toast.error(data.error || '获取模型列表失败')
+      }
+    } catch {
+      toast.error('获取模型列表失败')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  // Determine icon color based on category
+  const iconColorMap: Record<string, string> = {
+    llm: 'text-violet-500',
+    image: 'text-emerald-500',
+    tts: 'text-amber-500',
+    video: 'text-rose-500',
+  }
+  const iconColor = iconColorMap[category] || 'text-violet-500'
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Server className={cn('size-4', iconColor)} />
+        <h3 className="text-sm font-semibold text-slate-900">供应商与模型</h3>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Provider Select */}
+        <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Server className={cn('size-4', iconColor)} />
+            <Label className="text-sm font-medium text-slate-900">供应商</Label>
+          </div>
+          <p className="text-xs text-slate-500">选择AI服务供应商，不同供应商支持的功能和模型不同。</p>
+          <Select value={providerId} onValueChange={onProviderChange}>
+            <SelectTrigger className="text-sm">
+              <SelectValue placeholder="选择供应商" />
+            </SelectTrigger>
+            <SelectContent>
+              {providers.map(p => (
+                <SelectItem key={p.id} value={p.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{p.name}</span>
+                    {p.id === 'z-ai' && (
+                      <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">内置</Badge>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {currentProvider && (
+            <a
+              href={currentProvider.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-violet-500 transition-colors"
+            >
+              <ExternalLink className="size-3" />
+              {currentProvider.website}
+            </a>
+          )}
+        </div>
+
+        {/* API Key Input */}
+        <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Key className={cn('size-4', iconColor)} />
+            <Label className="text-sm font-medium text-slate-900">API Key</Label>
+            {apiKey && apiKey !== '' && (
+              <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">已配置</Badge>
+            )}
+          </div>
+          <p className="text-xs text-slate-500">
+            留空则使用环境变量 {envKey && <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px] font-mono text-slate-600">{envKey}</code>}
+          </p>
+          <div className="relative">
+            <Input
+              type={showApiKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => onApiKeyChange(e.target.value)}
+              placeholder={envKey ? `留空使用 ${envKey}` : '输入 API Key'}
+              className="pr-10 font-mono text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey(!showApiKey)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Model Select */}
+      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Cpu className={cn('size-4', iconColor)} />
+            <Label className="text-sm font-medium text-slate-900">模型选择</Label>
+          </div>
+          {providerId === 'openrouter' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 text-xs text-slate-500 hover:text-violet-600"
+              onClick={refreshModels}
+              disabled={refreshing}
+            >
+              <RefreshCw className={cn('size-3', refreshing && 'animate-spin')} />
+              刷新模型
+            </Button>
+          )}
+        </div>
+        <p className="text-xs text-slate-500">
+          选择该供应商下的具体模型。<Badge variant="outline" className="mx-0.5 text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">免费</Badge> 标记的模型无需付费。
+        </p>
+        {sortedModels.length > 0 ? (
+          <Select value={modelId} onValueChange={onModelChange}>
+            <SelectTrigger className="text-sm">
+              <SelectValue placeholder="选择模型" />
+            </SelectTrigger>
+            <SelectContent className="max-h-80">
+              {sortedModels.map(m => (
+                <SelectItem key={m.id} value={m.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{m.name}</span>
+                    {m.free && (
+                      <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">免费</Badge>
+                    )}
+                    {m.contextLength && (
+                      <span className="text-[10px] text-slate-400">
+                        {(m.contextLength / 1024).toFixed(0)}K ctx
+                      </span>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+            <Cpu className="mx-auto size-6 text-slate-300" />
+            <p className="mt-2 text-xs text-slate-400">该供应商在此分类下暂无可用模型</p>
+          </div>
+        )}
+
+        {/* Model info display */}
+        {modelId && modelId !== 'default' && (() => {
+          const selectedModel = sortedModels.find(m => m.id === modelId)
+          if (!selectedModel) return null
+          return (
+            <div className="mt-2 space-y-1 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-slate-700">{selectedModel.name}</span>
+                {selectedModel.free && (
+                  <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">免费</Badge>
+                )}
+              </div>
+              <div className="flex gap-4">
+                <span>模型ID: <code className="rounded bg-white px-1 py-0.5 font-mono text-[10px]">{selectedModel.id}</code></span>
+                {selectedModel.contextLength && (
+                  <span>上下文: {(selectedModel.contextLength / 1024).toFixed(0)}K tokens</span>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+      </div>
     </div>
   )
 }
@@ -490,151 +846,152 @@ function LLMConfig({
   const maxTokens = (config.maxTokens as number) ?? 4096
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {/* System Prompt */}
-      <div className="space-y-4 lg:col-span-2">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="size-4 text-violet-500" />
-          <h3 className="text-sm font-semibold text-slate-900">系统提示词模板</h3>
-        </div>
-        <p className="text-xs text-slate-500">定义AI在剧本创作中扮演的角色和行为准则</p>
-        <Textarea
-          value={(config.systemPrompt as string) || ''}
-          onChange={(e) => onChange('systemPrompt', e.target.value)}
-          placeholder="你是一位资深的短剧编剧和创意顾问..."
-          className="min-h-[120px] resize-y font-mono text-sm"
-        />
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <SlidersHorizontal className="size-4 text-violet-500" />
+        <h3 className="text-sm font-semibold text-slate-900">模型参数</h3>
       </div>
 
-      {/* Temperature */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* System Prompt */}
+        <div className="space-y-4 lg:col-span-2">
           <div className="flex items-center gap-2">
-            <Thermometer className="size-4 text-violet-500" />
-            <Label className="text-sm font-medium text-slate-900">温度 (Temperature)</Label>
+            <MessageSquare className="size-4 text-violet-500" />
+            <Label className="text-sm font-medium text-slate-900">系统提示词模板</Label>
           </div>
-          <Badge variant="outline" className="font-mono text-xs">{temperature.toFixed(2)}</Badge>
+          <p className="text-xs text-slate-500">定义AI在剧本创作中扮演的角色和行为准则</p>
+          <Textarea
+            value={(config.systemPrompt as string) || ''}
+            onChange={(e) => onChange('systemPrompt', e.target.value)}
+            placeholder="你是一位资深的短剧编剧和创意顾问..."
+            className="min-h-[120px] resize-y font-mono text-sm"
+          />
         </div>
-        <p className="text-xs text-slate-500">控制输出的随机性。值越高，创作内容越有创意；值越低，输出越稳定一致。</p>
-        <Slider
-          value={[temperature]}
-          onValueChange={([val]) => onChange('temperature', val)}
-          min={0}
-          max={2}
-          step={0.05}
-          className="mt-2"
-        />
-        <div className="flex justify-between text-[10px] text-slate-400">
-          <span>精确 (0)</span>
-          <span>平衡 (1)</span>
-          <span>创意 (2)</span>
-        </div>
-        {/* Quick presets */}
-        <div className="flex gap-2 pt-2">
-          {[
-            { label: '精确', value: 0.2 },
-            { label: '平衡', value: 0.7 },
-            { label: '创意', value: 1.2 },
-            { label: '自由', value: 1.8 },
-          ].map(preset => (
-            <Button
-              key={preset.label}
-              variant={temperature === preset.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-7 flex-1 text-[11px]"
-              onClick={() => onChange('temperature', preset.value)}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
-      </div>
 
-      {/* Top P */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
+        {/* Temperature */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Thermometer className="size-4 text-violet-500" />
+              <Label className="text-sm font-medium text-slate-900">温度 (Temperature)</Label>
+            </div>
+            <Badge variant="outline" className="font-mono text-xs">{temperature.toFixed(2)}</Badge>
+          </div>
+          <p className="text-xs text-slate-500">控制输出的随机性。值越高，创作内容越有创意；值越低，输出越稳定一致。</p>
+          <Slider
+            value={[temperature]}
+            onValueChange={([val]) => onChange('temperature', val)}
+            min={0}
+            max={2}
+            step={0.05}
+            className="mt-2"
+          />
+          <div className="flex justify-between text-[10px] text-slate-400">
+            <span>精确 (0)</span>
+            <span>平衡 (1)</span>
+            <span>创意 (2)</span>
+          </div>
+          <div className="flex gap-2 pt-2">
+            {[
+              { label: '精确', value: 0.2 },
+              { label: '平衡', value: 0.7 },
+              { label: '创意', value: 1.2 },
+              { label: '自由', value: 1.8 },
+            ].map(preset => (
+              <Button
+                key={preset.label}
+                variant={temperature === preset.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 flex-1 text-[11px]"
+                onClick={() => onChange('temperature', preset.value)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Top P */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="size-4 text-violet-500" />
+              <Label className="text-sm font-medium text-slate-900">Top P (核采样)</Label>
+            </div>
+            <Badge variant="outline" className="font-mono text-xs">{topP.toFixed(2)}</Badge>
+          </div>
+          <p className="text-xs text-slate-500">控制候选词范围。较低的值限制输出更集中于高概率词。</p>
+          <Slider
+            value={[topP]}
+            onValueChange={([val]) => onChange('topP', val)}
+            min={0}
+            max={1}
+            step={0.05}
+            className="mt-2"
+          />
+          <div className="flex justify-between text-[10px] text-slate-400">
+            <span>严格 (0)</span>
+            <span>广泛 (1)</span>
+          </div>
+        </div>
+
+        {/* Max Tokens */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="size-4 text-violet-500" />
-            <Label className="text-sm font-medium text-slate-900">Top P (核采样)</Label>
+            <Zap className="size-4 text-violet-500" />
+            <Label className="text-sm font-medium text-slate-900">最大生成长度 (Max Tokens)</Label>
           </div>
-          <Badge variant="outline" className="font-mono text-xs">{topP.toFixed(2)}</Badge>
+          <p className="text-xs text-slate-500">限制AI单次生成的最大文本长度。较长的值允许更完整的输出。</p>
+          <Input
+            type="number"
+            value={maxTokens}
+            onChange={(e) => onChange('maxTokens', parseInt(e.target.value) || 4096)}
+            min={256}
+            max={32768}
+            step={256}
+            className="font-mono text-sm"
+          />
+          <div className="flex gap-2">
+            {[
+              { label: '简洁', value: 1024 },
+              { label: '标准', value: 4096 },
+              { label: '详细', value: 8192 },
+              { label: '超长', value: 16384 },
+            ].map(preset => (
+              <Button
+                key={preset.label}
+                variant={maxTokens === preset.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 flex-1 text-[11px]"
+                onClick={() => onChange('maxTokens', preset.value)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
         </div>
-        <p className="text-xs text-slate-500">控制候选词范围。较低的值限制输出更集中于高概率词。</p>
-        <Slider
-          value={[topP]}
-          onValueChange={([val]) => onChange('topP', val)}
-          min={0}
-          max={1}
-          step={0.05}
-          className="mt-2"
-        />
-        <div className="flex justify-between text-[10px] text-slate-400">
-          <span>严格 (0)</span>
-          <span>广泛 (1)</span>
-        </div>
-      </div>
 
-      {/* Max Tokens */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Zap className="size-4 text-violet-500" />
-          <Label className="text-sm font-medium text-slate-900">最大生成长度 (Max Tokens)</Label>
-        </div>
-        <p className="text-xs text-slate-500">限制AI单次生成的最大文本长度。较长的值允许更完整的输出。</p>
-        <Input
-          type="number"
-          value={maxTokens}
-          onChange={(e) => onChange('maxTokens', parseInt(e.target.value) || 4096)}
-          min={256}
-          max={32768}
-          step={256}
-          className="font-mono text-sm"
-        />
-        <div className="flex gap-2">
-          {[
-            { label: '简洁', value: 1024 },
-            { label: '标准', value: 4096 },
-            { label: '详细', value: 8192 },
-            { label: '超长', value: 16384 },
-          ].map(preset => (
-            <Button
-              key={preset.label}
-              variant={maxTokens === preset.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-7 flex-1 text-[11px]"
-              onClick={() => onChange('maxTokens', preset.value)}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Advanced Info */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-gradient-to-br from-violet-50/50 to-purple-50/50 p-4">
-        <div className="flex items-center gap-2">
-          <Shield className="size-4 text-violet-500" />
-          <h4 className="text-sm font-medium text-slate-900">模型信息</h4>
-        </div>
-        <div className="space-y-2 text-xs text-slate-500">
-          <div className="flex justify-between">
-            <span>引擎</span>
-            <span className="font-medium text-slate-700">z-ai-web-dev-sdk</span>
+        {/* Advanced Info */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-gradient-to-br from-violet-50/50 to-purple-50/50 p-4">
+          <div className="flex items-center gap-2">
+            <Shield className="size-4 text-violet-500" />
+            <h4 className="text-sm font-medium text-slate-900">模型信息</h4>
           </div>
-          <Separator className="my-1" />
-          <div className="flex justify-between">
-            <span>响应格式</span>
-            <span className="font-medium text-slate-700">Chat Completions</span>
-          </div>
-          <Separator className="my-1" />
-          <div className="flex justify-between">
-            <span>支持模式</span>
-            <span className="font-medium text-slate-700">多轮对话</span>
-          </div>
-          <Separator className="my-1" />
-          <div className="flex justify-between">
-            <span>语言</span>
-            <span className="font-medium text-slate-700">中文/英文</span>
+          <div className="space-y-2 text-xs text-slate-500">
+            <div className="flex justify-between">
+              <span>响应格式</span>
+              <span className="font-medium text-slate-700">Chat Completions</span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between">
+              <span>支持模式</span>
+              <span className="font-medium text-slate-700">多轮对话</span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between">
+              <span>语言</span>
+              <span className="font-medium text-slate-700">中文/英文</span>
+            </div>
           </div>
         </div>
       </div>
@@ -651,149 +1008,151 @@ function ImageConfig({
   onChange: (key: string, value: unknown) => void
 }) {
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {/* Character Image Size */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Wand2 className="size-4 text-emerald-500" />
-          <Label className="text-sm font-medium text-slate-900">角色图片默认尺寸</Label>
-        </div>
-        <p className="text-xs text-slate-500">角色头像/立绘的生成尺寸，竖版更适合人物展示。</p>
-        <Select
-          value={(config.charSize as string) || '864x1152'}
-          onValueChange={(val) => onChange('charSize', val)}
-        >
-          <SelectTrigger className="font-mono text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {IMAGE_SIZES.map(s => (
-              <SelectItem key={s.value} value={s.value}>
-                {s.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <SlidersHorizontal className="size-4 text-emerald-500" />
+        <h3 className="text-sm font-semibold text-slate-900">图像参数</h3>
       </div>
 
-      {/* Scene Image Size */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Film className="size-4 text-emerald-500" />
-          <Label className="text-sm font-medium text-slate-900">场景图片默认尺寸</Label>
-        </div>
-        <p className="text-xs text-slate-500">场景/分镜图的生成尺寸，横版更适合展示场景。</p>
-        <Select
-          value={(config.sceneSize as string) || '1152x864'}
-          onValueChange={(val) => onChange('sceneSize', val)}
-        >
-          <SelectTrigger className="font-mono text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {IMAGE_SIZES.map(s => (
-              <SelectItem key={s.value} value={s.value}>
-                {s.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Quality */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-emerald-500" />
-          <Label className="text-sm font-medium text-slate-900">图像质量</Label>
-        </div>
-        <p className="text-xs text-slate-500">更高质量需要更长生成时间。</p>
-        <div className="flex gap-2">
-          {[
-            { label: '标准', value: 'standard', desc: '快速生成' },
-            { label: '高清', value: 'hd', desc: '精细画质' },
-          ].map(q => (
-            <Button
-              key={q.value}
-              variant={(config.quality as string) === q.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-auto flex-1 flex-col gap-0.5 py-2"
-              onClick={() => onChange('quality', q.value)}
-            >
-              <span className="text-xs font-medium">{q.label}</span>
-              <span className="text-[10px] opacity-70">{q.desc}</span>
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Style */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Zap className="size-4 text-emerald-500" />
-          <Label className="text-sm font-medium text-slate-900">图像风格</Label>
-        </div>
-        <p className="text-xs text-slate-500">影响生成图像的整体风格和色彩表现。</p>
-        <div className="flex gap-2">
-          {[
-            { label: '生动', value: 'vivid', desc: '色彩鲜明' },
-            { label: '自然', value: 'natural', desc: '写实风格' },
-          ].map(s => (
-            <Button
-              key={s.value}
-              variant={(config.style as string) === s.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-auto flex-1 flex-col gap-0.5 py-2"
-              onClick={() => onChange('style', s.value)}
-            >
-              <span className="text-xs font-medium">{s.label}</span>
-              <span className="text-[10px] opacity-70">{s.desc}</span>
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Enhance Prompt */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Character Image Size */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
             <Wand2 className="size-4 text-emerald-500" />
-            <Label className="text-sm font-medium text-slate-900">自动优化提示词</Label>
+            <Label className="text-sm font-medium text-slate-900">角色图片默认尺寸</Label>
           </div>
-          <Switch
-            checked={(config.enhancePrompt as boolean) ?? true}
-            onCheckedChange={(checked) => onChange('enhancePrompt', checked)}
-          />
+          <p className="text-xs text-slate-500">角色头像/立绘的生成尺寸，竖版更适合人物展示。</p>
+          <Select
+            value={(config.charSize as string) || '864x1152'}
+            onValueChange={(val) => onChange('charSize', val)}
+          >
+            <SelectTrigger className="font-mono text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {IMAGE_SIZES.map(s => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <p className="text-xs text-slate-500">
-          开启后，系统会自动优化您的图片描述提示词，提升生成质量。
-        </p>
-      </div>
 
-      {/* Preview */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 p-4">
-        <div className="flex items-center gap-2">
-          <MonitorPlay className="size-4 text-emerald-500" />
-          <h4 className="text-sm font-medium text-slate-900">图像生成信息</h4>
+        {/* Scene Image Size */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Film className="size-4 text-emerald-500" />
+            <Label className="text-sm font-medium text-slate-900">场景图片默认尺寸</Label>
+          </div>
+          <p className="text-xs text-slate-500">场景/分镜图的生成尺寸，横版更适合展示场景。</p>
+          <Select
+            value={(config.sceneSize as string) || '1152x864'}
+            onValueChange={(val) => onChange('sceneSize', val)}
+          >
+            <SelectTrigger className="font-mono text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {IMAGE_SIZES.map(s => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="space-y-2 text-xs text-slate-500">
-          <div className="flex justify-between">
-            <span>引擎</span>
-            <span className="font-medium text-slate-700">z-ai-web-dev-sdk</span>
+
+        {/* Quality */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-emerald-500" />
+            <Label className="text-sm font-medium text-slate-900">图像质量</Label>
           </div>
-          <Separator className="my-1" />
-          <div className="flex justify-between">
-            <span>输出格式</span>
-            <span className="font-medium text-slate-700">PNG (Base64)</span>
+          <p className="text-xs text-slate-500">更高质量需要更长生成时间。</p>
+          <div className="flex gap-2">
+            {[
+              { label: '标准', value: 'standard', desc: '快速生成' },
+              { label: '高清', value: 'hd', desc: '精细画质' },
+            ].map(q => (
+              <Button
+                key={q.value}
+                variant={(config.quality as string) === q.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-auto flex-1 flex-col gap-0.5 py-2"
+                onClick={() => onChange('quality', q.value)}
+              >
+                <span className="text-xs font-medium">{q.label}</span>
+                <span className="text-[10px] opacity-70">{q.desc}</span>
+              </Button>
+            ))}
           </div>
-          <Separator className="my-1" />
-          <div className="flex justify-between">
-            <span>支持用途</span>
-            <span className="font-medium text-slate-700">角色/场景/分镜</span>
+        </div>
+
+        {/* Style */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Zap className="size-4 text-emerald-500" />
+            <Label className="text-sm font-medium text-slate-900">图像风格</Label>
           </div>
-          <Separator className="my-1" />
-          <div className="flex justify-between">
-            <span>平均耗时</span>
-            <span className="font-medium text-slate-700">10-30秒</span>
+          <p className="text-xs text-slate-500">影响生成图像的整体风格和色彩表现。</p>
+          <div className="flex gap-2">
+            {[
+              { label: '生动', value: 'vivid', desc: '色彩鲜明' },
+              { label: '自然', value: 'natural', desc: '写实风格' },
+            ].map(s => (
+              <Button
+                key={s.value}
+                variant={(config.style as string) === s.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-auto flex-1 flex-col gap-0.5 py-2"
+                onClick={() => onChange('style', s.value)}
+              >
+                <span className="text-xs font-medium">{s.label}</span>
+                <span className="text-[10px] opacity-70">{s.desc}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Enhance Prompt */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wand2 className="size-4 text-emerald-500" />
+              <Label className="text-sm font-medium text-slate-900">自动优化提示词</Label>
+            </div>
+            <Switch
+              checked={(config.enhancePrompt as boolean) ?? true}
+              onCheckedChange={(checked) => onChange('enhancePrompt', checked)}
+            />
+          </div>
+          <p className="text-xs text-slate-500">
+            开启后，系统会自动优化您的图片描述提示词，提升生成质量。
+          </p>
+        </div>
+
+        {/* Info */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 p-4">
+          <div className="flex items-center gap-2">
+            <MonitorPlay className="size-4 text-emerald-500" />
+            <h4 className="text-sm font-medium text-slate-900">图像生成信息</h4>
+          </div>
+          <div className="space-y-2 text-xs text-slate-500">
+            <div className="flex justify-between">
+              <span>输出格式</span>
+              <span className="font-medium text-slate-700">PNG / URL</span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between">
+              <span>支持用途</span>
+              <span className="font-medium text-slate-700">角色/场景/分镜</span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between">
+              <span>平均耗时</span>
+              <span className="font-medium text-slate-700">10-30秒</span>
+            </div>
           </div>
         </div>
       </div>
@@ -813,165 +1172,172 @@ function TTSConfig({
   const maxChars = (config.maxChars as number) ?? 1024
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {/* Default Voice */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Volume2 className="size-4 text-amber-500" />
-          <Label className="text-sm font-medium text-slate-900">默认语音</Label>
-        </div>
-        <p className="text-xs text-slate-500">配音工作室的默认声音类型，可在角色设置中单独指定。</p>
-        <Select
-          value={(config.defaultVoice as string) || 'tongtong'}
-          onValueChange={(val) => onChange('defaultVoice', val)}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {VOICE_OPTIONS.map(v => (
-              <SelectItem key={v.value} value={v.value}>
-                {getVoiceLabel(v.value)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <SlidersHorizontal className="size-4 text-amber-500" />
+        <h3 className="text-sm font-semibold text-slate-900">语音参数</h3>
       </div>
 
-      {/* Speed */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Default Voice */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
-            <Timer className="size-4 text-amber-500" />
-            <Label className="text-sm font-medium text-slate-900">默认语速</Label>
+            <Volume2 className="size-4 text-amber-500" />
+            <Label className="text-sm font-medium text-slate-900">默认语音</Label>
           </div>
-          <Badge variant="outline" className="font-mono text-xs">{speed.toFixed(1)}x</Badge>
+          <p className="text-xs text-slate-500">配音工作室的默认声音类型，可在角色设置中单独指定。</p>
+          <Select
+            value={(config.defaultVoice as string) || 'tongtong'}
+            onValueChange={(val) => onChange('defaultVoice', val)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VOICE_OPTIONS.map(v => (
+                <SelectItem key={v.value} value={v.value}>
+                  {getVoiceLabel(v.value)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <p className="text-xs text-slate-500">控制语音播放速度。1.0为正常语速。</p>
-        <Slider
-          value={[speed]}
-          onValueChange={([val]) => onChange('defaultSpeed', val)}
-          min={0.5}
-          max={2.0}
-          step={0.1}
-          className="mt-2"
-        />
-        <div className="flex justify-between text-[10px] text-slate-400">
-          <span>0.5x (慢速)</span>
-          <span>1.0x (正常)</span>
-          <span>2.0x (快速)</span>
-        </div>
-        <div className="flex gap-2 pt-1">
-          {[
-            { label: '慢速', value: 0.7 },
-            { label: '正常', value: 1.0 },
-            { label: '快速', value: 1.4 },
-          ].map(preset => (
-            <Button
-              key={preset.label}
-              variant={speed === preset.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-7 flex-1 text-[11px]"
-              onClick={() => onChange('defaultSpeed', preset.value)}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
-      </div>
 
-      {/* Audio Format */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Mic className="size-4 text-amber-500" />
-          <Label className="text-sm font-medium text-slate-900">输出格式</Label>
-        </div>
-        <p className="text-xs text-slate-500">语音合成输出的音频格式。</p>
-        <div className="flex gap-2">
-          {['wav', 'mp3', 'opus'].map(fmt => (
-            <Button
-              key={fmt}
-              variant={(config.format as string) === fmt ? 'default' : 'outline'}
-              size="sm"
-              className="h-8 flex-1 text-xs"
-              onClick={() => onChange('format', fmt)}
-            >
-              {fmt.toUpperCase()}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Max Characters */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Zap className="size-4 text-amber-500" />
-          <Label className="text-sm font-medium text-slate-900">最大文本长度</Label>
-        </div>
-        <p className="text-xs text-slate-500">单次语音合成的最大字符数限制。</p>
-        <Input
-          type="number"
-          value={maxChars}
-          onChange={(e) => onChange('maxChars', parseInt(e.target.value) || 1024)}
-          min={100}
-          max={4096}
-          step={128}
-          className="font-mono text-sm"
-        />
-        <div className="flex gap-2">
-          {[
-            { label: '256字', value: 256 },
-            { label: '512字', value: 512 },
-            { label: '1024字', value: 1024 },
-            { label: '2048字', value: 2048 },
-          ].map(preset => (
-            <Button
-              key={preset.label}
-              variant={maxChars === preset.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-7 flex-1 text-[11px]"
-              onClick={() => onChange('maxChars', preset.value)}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Voice Preview */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 lg:col-span-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-amber-500" />
-          <h4 className="text-sm font-medium text-slate-900">可用声音一览</h4>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {VOICE_OPTIONS.map(v => (
-            <div
-              key={v.value}
-              className={cn(
-                'flex items-center gap-3 rounded-lg border p-3 transition-all',
-                (config.defaultVoice as string) === v.value
-                  ? 'border-amber-300 bg-amber-50'
-                  : 'border-slate-200 hover:border-slate-300',
-              )}
-            >
-              <div className={cn(
-                'flex size-8 items-center justify-center rounded-full',
-                (config.defaultVoice as string) === v.value
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-slate-100 text-slate-400',
-              )}>
-                <Mic className="size-3.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-slate-900">{v.label}</p>
-                <p className="truncate text-[10px] text-slate-500">{getVoiceLabel(v.value)}</p>
-              </div>
-              {(config.defaultVoice as string) === v.value && (
-                <Check className="size-3.5 text-amber-500" />
-              )}
+        {/* Speed */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Timer className="size-4 text-amber-500" />
+              <Label className="text-sm font-medium text-slate-900">默认语速</Label>
             </div>
-          ))}
+            <Badge variant="outline" className="font-mono text-xs">{speed.toFixed(1)}x</Badge>
+          </div>
+          <p className="text-xs text-slate-500">控制语音播放速度。1.0为正常语速。</p>
+          <Slider
+            value={[speed]}
+            onValueChange={([val]) => onChange('defaultSpeed', val)}
+            min={0.5}
+            max={2.0}
+            step={0.1}
+            className="mt-2"
+          />
+          <div className="flex justify-between text-[10px] text-slate-400">
+            <span>0.5x (慢速)</span>
+            <span>1.0x (正常)</span>
+            <span>2.0x (快速)</span>
+          </div>
+          <div className="flex gap-2 pt-1">
+            {[
+              { label: '慢速', value: 0.7 },
+              { label: '正常', value: 1.0 },
+              { label: '快速', value: 1.4 },
+            ].map(preset => (
+              <Button
+                key={preset.label}
+                variant={speed === preset.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 flex-1 text-[11px]"
+                onClick={() => onChange('defaultSpeed', preset.value)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Audio Format */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Mic className="size-4 text-amber-500" />
+            <Label className="text-sm font-medium text-slate-900">输出格式</Label>
+          </div>
+          <p className="text-xs text-slate-500">语音合成输出的音频格式。</p>
+          <div className="flex gap-2">
+            {['wav', 'mp3', 'opus'].map(fmt => (
+              <Button
+                key={fmt}
+                variant={(config.format as string) === fmt ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 flex-1 text-xs"
+                onClick={() => onChange('format', fmt)}
+              >
+                {fmt.toUpperCase()}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Max Characters */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Zap className="size-4 text-amber-500" />
+            <Label className="text-sm font-medium text-slate-900">最大文本长度</Label>
+          </div>
+          <p className="text-xs text-slate-500">单次语音合成的最大字符数限制。</p>
+          <Input
+            type="number"
+            value={maxChars}
+            onChange={(e) => onChange('maxChars', parseInt(e.target.value) || 1024)}
+            min={100}
+            max={4096}
+            step={128}
+            className="font-mono text-sm"
+          />
+          <div className="flex gap-2">
+            {[
+              { label: '256字', value: 256 },
+              { label: '512字', value: 512 },
+              { label: '1024字', value: 1024 },
+              { label: '2048字', value: 2048 },
+            ].map(preset => (
+              <Button
+                key={preset.label}
+                variant={maxChars === preset.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 flex-1 text-[11px]"
+                onClick={() => onChange('maxChars', preset.value)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Voice Preview */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 lg:col-span-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-amber-500" />
+            <h4 className="text-sm font-medium text-slate-900">可用声音一览</h4>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {VOICE_OPTIONS.map(v => (
+              <div
+                key={v.value}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg border p-3 transition-all',
+                  (config.defaultVoice as string) === v.value
+                    ? 'border-amber-300 bg-amber-50'
+                    : 'border-slate-200 hover:border-slate-300',
+                )}
+              >
+                <div className={cn(
+                  'flex size-8 items-center justify-center rounded-full',
+                  (config.defaultVoice as string) === v.value
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-slate-100 text-slate-400',
+                )}>
+                  <Mic className="size-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium text-slate-900">{v.label}</p>
+                  <p className="truncate text-[10px] text-slate-500">{getVoiceLabel(v.value)}</p>
+                </div>
+                {(config.defaultVoice as string) === v.value && (
+                  <Check className="size-3.5 text-amber-500" />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -987,169 +1353,146 @@ function VideoConfig({
   onChange: (key: string, value: unknown) => void
 }) {
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {/* Quality */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-rose-500" />
-          <Label className="text-sm font-medium text-slate-900">默认画质</Label>
-        </div>
-        <p className="text-xs text-slate-500">视频生成画质，更高质量需要更长等待时间。</p>
-        <div className="flex gap-2">
-          {[
-            { label: '极速', value: 'speed', desc: '优先速度' },
-            { label: '标准', value: 'standard', desc: '平衡选择' },
-            { label: '高清', value: 'hd', desc: '最佳画质' },
-          ].map(q => (
-            <Button
-              key={q.value}
-              variant={(config.defaultQuality as string) === q.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-auto flex-1 flex-col gap-0.5 py-2"
-              onClick={() => onChange('defaultQuality', q.value)}
-            >
-              <span className="text-xs font-medium">{q.label}</span>
-              <span className="text-[10px] opacity-70">{q.desc}</span>
-            </Button>
-          ))}
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <SlidersHorizontal className="size-4 text-rose-500" />
+        <h3 className="text-sm font-semibold text-slate-900">视频参数</h3>
       </div>
 
-      {/* Duration */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Timer className="size-4 text-rose-500" />
-          <Label className="text-sm font-medium text-slate-900">默认时长 (秒)</Label>
-        </div>
-        <p className="text-xs text-slate-500">单个视频片段的默认时长。</p>
-        <div className="flex gap-2">
-          {[
-            { label: '3秒', value: 3 },
-            { label: '5秒', value: 5 },
-            { label: '8秒', value: 8 },
-            { label: '10秒', value: 10 },
-          ].map(d => (
-            <Button
-              key={d.label}
-              variant={(config.defaultDuration as number) === d.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-auto flex-1 flex-col gap-0.5 py-2"
-              onClick={() => onChange('defaultDuration', d.value)}
-            >
-              <span className="text-xs font-medium">{d.label}</span>
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* FPS */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <MonitorPlay className="size-4 text-rose-500" />
-          <Label className="text-sm font-medium text-slate-900">帧率 (FPS)</Label>
-        </div>
-        <p className="text-xs text-slate-500">视频的帧率。更高的帧率让画面更流畅。</p>
-        <div className="flex gap-2">
-          {[
-            { label: '24fps', value: 24, desc: '电影标准' },
-            { label: '30fps', value: 30, desc: '流畅' },
-            { label: '60fps', value: 60, desc: '丝滑' },
-          ].map(f => (
-            <Button
-              key={f.value}
-              variant={(config.defaultFps as number) === f.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-auto flex-1 flex-col gap-0.5 py-2"
-              onClick={() => onChange('defaultFps', f.value)}
-            >
-              <span className="text-xs font-medium">{f.label}</span>
-              <span className="text-[10px] opacity-70">{f.desc}</span>
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Size */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Film className="size-4 text-rose-500" />
-          <Label className="text-sm font-medium text-slate-900">分辨率</Label>
-        </div>
-        <p className="text-xs text-slate-500">视频输出的分辨率。</p>
-        <Select
-          value={(config.defaultSize as string) || '1920x1080'}
-          onValueChange={(val) => onChange('defaultSize', val)}
-        >
-          <SelectTrigger className="font-mono text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {VIDEO_SIZES.map(s => (
-              <SelectItem key={s.value} value={s.value}>
-                {s.label}
-              </SelectItem>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Quality */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-rose-500" />
+            <Label className="text-sm font-medium text-slate-900">默认画质</Label>
+          </div>
+          <p className="text-xs text-slate-500">视频生成画质，更高质量需要更长等待时间。</p>
+          <div className="flex gap-2">
+            {[
+              { label: '极速', value: 'speed', desc: '优先速度' },
+              { label: '标准', value: 'standard', desc: '平衡选择' },
+              { label: '高清', value: 'hd', desc: '最佳画质' },
+            ].map(q => (
+              <Button
+                key={q.value}
+                variant={(config.defaultQuality as string) === q.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-auto flex-1 flex-col gap-0.5 py-2"
+                onClick={() => onChange('defaultQuality', q.value)}
+              >
+                <span className="text-xs font-medium">{q.label}</span>
+                <span className="text-[10px] opacity-70">{q.desc}</span>
+              </Button>
             ))}
-          </SelectContent>
-        </Select>
-      </div>
+          </div>
+        </div>
 
-      {/* With Audio */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
+        {/* Duration */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
-            <Volume2 className="size-4 text-rose-500" />
-            <Label className="text-sm font-medium text-slate-900">自动生成音频</Label>
+            <Timer className="size-4 text-rose-500" />
+            <Label className="text-sm font-medium text-slate-900">默认时长 (秒)</Label>
           </div>
-          <Switch
-            checked={(config.withAudio as boolean) ?? false}
-            onCheckedChange={(checked) => onChange('withAudio', checked)}
-          />
+          <p className="text-xs text-slate-500">单个视频片段的默认时长。</p>
+          <div className="flex gap-2">
+            {[
+              { label: '3秒', value: 3 },
+              { label: '5秒', value: 5 },
+              { label: '8秒', value: 8 },
+              { label: '10秒', value: 10 },
+            ].map(d => (
+              <Button
+                key={d.label}
+                variant={(config.defaultDuration as number) === d.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-auto flex-1 flex-col gap-0.5 py-2"
+                onClick={() => onChange('defaultDuration', d.value)}
+              >
+                <span className="text-xs font-medium">{d.label}</span>
+              </Button>
+            ))}
+          </div>
         </div>
-        <p className="text-xs text-slate-500">
-          开启后，视频生成时会自动包含音频轨道。注意：可能会增加生成时间和成本。
-        </p>
-      </div>
 
-      {/* Auto Poll */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
+        {/* FPS */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
-            <Zap className="size-4 text-rose-500" />
-            <Label className="text-sm font-medium text-slate-900">自动轮询状态</Label>
+            <MonitorPlay className="size-4 text-rose-500" />
+            <Label className="text-sm font-medium text-slate-900">帧率 (FPS)</Label>
           </div>
-          <Switch
-            checked={(config.autoPoll as boolean) ?? true}
-            onCheckedChange={(checked) => onChange('autoPoll', checked)}
-          />
+          <p className="text-xs text-slate-500">视频的帧率。更高的帧率让画面更流畅。</p>
+          <div className="flex gap-2">
+            {[
+              { label: '24fps', value: 24, desc: '电影标准' },
+              { label: '30fps', value: 30, desc: '流畅' },
+              { label: '60fps', value: 60, desc: '丝滑' },
+            ].map(f => (
+              <Button
+                key={f.value}
+                variant={(config.defaultFps as number) === f.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-auto flex-1 flex-col gap-0.5 py-2"
+                onClick={() => onChange('defaultFps', f.value)}
+              >
+                <span className="text-xs font-medium">{f.label}</span>
+                <span className="text-[10px] opacity-70">{f.desc}</span>
+              </Button>
+            ))}
+          </div>
         </div>
-        <p className="text-xs text-slate-500">
-          开启后，提交视频生成任务后会自动轮询状态直到完成。
-        </p>
-      </div>
 
-      {/* Video Info */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-gradient-to-br from-rose-50/50 to-pink-50/50 p-4 lg:col-span-2">
-        <div className="flex items-center gap-2">
-          <Info className="size-4 text-rose-500" />
-          <h4 className="text-sm font-medium text-slate-900">视频生成信息</h4>
+        {/* Video Size */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <Film className="size-4 text-rose-500" />
+            <Label className="text-sm font-medium text-slate-900">默认分辨率</Label>
+          </div>
+          <p className="text-xs text-slate-500">视频输出分辨率。</p>
+          <Select
+            value={(config.defaultSize as string) || '1920x1080'}
+            onValueChange={(val) => onChange('defaultSize', val)}
+          >
+            <SelectTrigger className="font-mono text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VIDEO_SIZES.map(s => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="grid grid-cols-1 gap-3 text-xs text-slate-500 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg bg-white/80 p-3">
-            <p className="text-slate-400">引擎</p>
-            <p className="mt-1 font-medium text-slate-700">z-ai-web-dev-sdk</p>
+
+        {/* With Audio */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Volume2 className="size-4 text-rose-500" />
+              <Label className="text-sm font-medium text-slate-900">包含音频</Label>
+            </div>
+            <Switch
+              checked={(config.withAudio as boolean) ?? false}
+              onCheckedChange={(checked) => onChange('withAudio', checked)}
+            />
           </div>
-          <div className="rounded-lg bg-white/80 p-3">
-            <p className="text-slate-400">输出格式</p>
-            <p className="mt-1 font-medium text-slate-700">MP4 (URL)</p>
+          <p className="text-xs text-slate-500">生成的视频是否包含音频。</p>
+        </div>
+
+        {/* Auto Poll */}
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="size-4 text-rose-500" />
+              <Label className="text-sm font-medium text-slate-900">自动轮询</Label>
+            </div>
+            <Switch
+              checked={(config.autoPoll as boolean) ?? true}
+              onCheckedChange={(checked) => onChange('autoPoll', checked)}
+            />
           </div>
-          <div className="rounded-lg bg-white/80 p-3">
-            <p className="text-slate-400">支持输入</p>
-            <p className="mt-1 font-medium text-slate-700">文本/图片</p>
-          </div>
-          <div className="rounded-lg bg-white/80 p-3">
-            <p className="text-slate-400">平均耗时</p>
-            <p className="mt-1 font-medium text-slate-700">1-5分钟</p>
-          </div>
+          <p className="text-xs text-slate-500">视频生成后自动轮询获取结果。</p>
         </div>
       </div>
     </div>

@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { PROVIDERS, getProvidersForCategory } from '@/lib/providers'
+import type { ProviderCategory } from '@/lib/providers'
 
 // 默认配置
 const DEFAULT_CONFIGS: Record<string, Record<string, unknown>> = {
   llm: {
-    model: 'default',
+    provider: 'openrouter',
+    modelId: 'deepseek/deepseek-chat-v3-0324:free',
     temperature: 0.7,
     maxTokens: 4096,
     topP: 1.0,
     systemPrompt: '你是一位资深的短剧编剧和创意顾问。',
   },
   image: {
+    provider: 'z-ai',
+    modelId: 'default',
     defaultSize: '1024x1024',
     charSize: '864x1152',
     sceneSize: '1152x864',
@@ -19,6 +24,8 @@ const DEFAULT_CONFIGS: Record<string, Record<string, unknown>> = {
     enhancePrompt: true,
   },
   tts: {
+    provider: 'z-ai',
+    modelId: 'default',
     defaultVoice: 'tongtong',
     defaultSpeed: 1.0,
     format: 'wav',
@@ -26,6 +33,8 @@ const DEFAULT_CONFIGS: Record<string, Record<string, unknown>> = {
     maxChars: 1024,
   },
   video: {
+    provider: 'z-ai',
+    modelId: 'default',
     defaultQuality: 'speed',
     defaultDuration: 5,
     defaultFps: 30,
@@ -36,11 +45,38 @@ const DEFAULT_CONFIGS: Record<string, Record<string, unknown>> = {
 }
 
 // GET /api/model-config — 获取所有配置（如果不存在则自动创建）
-export async function GET() {
+// GET /api/model-config?providers=1&category=llm — 获取某分类的可用供应商和模型
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const providersQuery = searchParams.get('providers')
+    const categoryQuery = searchParams.get('category')
+
+    // Provider list endpoint
+    if (providersQuery && categoryQuery) {
+      const validCategories: ProviderCategory[] = ['llm', 'image', 'tts', 'video']
+      if (!validCategories.includes(categoryQuery as ProviderCategory)) {
+        return NextResponse.json(
+          { success: false, error: '无效的配置类别' },
+          { status: 400 },
+        )
+      }
+      const providers = getProvidersForCategory(categoryQuery as ProviderCategory)
+      return NextResponse.json({ success: true, providers })
+    }
+
+    // Default: return all configs
     const categories = ['llm', 'image', 'tts', 'video']
 
-    const configs: Record<string, { id: string; category: string; config: Record<string, unknown>; enabled: boolean }> = {}
+    const configs: Record<string, {
+      id: string
+      category: string
+      provider: string
+      modelId: string
+      apiKey: string
+      config: Record<string, unknown>
+      enabled: boolean
+    }> = {}
 
     for (const cat of categories) {
       const record = await db.modelConfig.findUnique({ where: { category: cat } })
@@ -48,22 +84,32 @@ export async function GET() {
         configs[cat] = {
           id: record.id,
           category: record.category,
+          provider: record.provider,
+          modelId: record.modelId,
+          apiKey: record.apiKey,
           config: JSON.parse(record.config),
           enabled: record.enabled,
         }
       } else {
         // 自动创建默认配置
+        const defaultConf = DEFAULT_CONFIGS[cat] || {}
         const created = await db.modelConfig.create({
           data: {
             category: cat,
-            config: JSON.stringify(DEFAULT_CONFIGS[cat] || {}),
+            provider: (defaultConf.provider as string) || 'z-ai',
+            modelId: (defaultConf.modelId as string) || 'default',
+            apiKey: '',
+            config: JSON.stringify(defaultConf),
             enabled: true,
           },
         })
         configs[cat] = {
           id: created.id,
           category: created.category,
-          config: DEFAULT_CONFIGS[cat] || {},
+          provider: created.provider,
+          modelId: created.modelId,
+          apiKey: created.apiKey,
+          config: defaultConf,
           enabled: true,
         }
       }
@@ -82,7 +128,7 @@ export async function GET() {
 // PUT /api/model-config — 更新配置
 export async function PUT(req: NextRequest) {
   try {
-    const { category, config, enabled } = await req.json()
+    const { category, config, enabled, provider, modelId, apiKey } = await req.json()
 
     if (!category || !['llm', 'image', 'tts', 'video'].includes(category)) {
       return NextResponse.json(
@@ -95,10 +141,14 @@ export async function PUT(req: NextRequest) {
 
     if (!existing) {
       // 不存在则创建
+      const defaultConf = DEFAULT_CONFIGS[category] || {}
       const created = await db.modelConfig.create({
         data: {
           category,
-          config: JSON.stringify(config || DEFAULT_CONFIGS[category] || {}),
+          provider: provider || (defaultConf.provider as string) || 'z-ai',
+          modelId: modelId || (defaultConf.modelId as string) || 'default',
+          apiKey: apiKey || '',
+          config: JSON.stringify(config || defaultConf),
           enabled: enabled !== undefined ? enabled : true,
         },
       })
@@ -109,6 +159,9 @@ export async function PUT(req: NextRequest) {
     const updateData: Record<string, unknown> = {}
     if (config !== undefined) updateData.config = JSON.stringify(config)
     if (enabled !== undefined) updateData.enabled = enabled
+    if (provider !== undefined) updateData.provider = provider
+    if (modelId !== undefined) updateData.modelId = modelId
+    if (apiKey !== undefined) updateData.apiKey = apiKey
 
     const updated = await db.modelConfig.update({
       where: { category },
@@ -138,15 +191,23 @@ export async function POST(req: NextRequest) {
     }
 
     const defaultConfig = DEFAULT_CONFIGS[category] || {}
+    const defaultProvider = (defaultConfig.provider as string) || 'z-ai'
+    const defaultModelId = (defaultConfig.modelId as string) || 'default'
 
     const updated = await db.modelConfig.upsert({
       where: { category },
       create: {
         category,
+        provider: defaultProvider,
+        modelId: defaultModelId,
+        apiKey: '',
         config: JSON.stringify(defaultConfig),
         enabled: true,
       },
       update: {
+        provider: defaultProvider,
+        modelId: defaultModelId,
+        apiKey: '',
         config: JSON.stringify(defaultConfig),
         enabled: true,
       },

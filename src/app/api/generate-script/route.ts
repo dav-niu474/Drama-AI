@@ -1,28 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
-
-// 从数据库读取模型配置
-async function getModelConfig(category: string): Promise<Record<string, unknown>> {
-  try {
-    const record = await db.modelConfig.findUnique({ where: { category } })
-    if (record) return JSON.parse(record.config)
-  } catch { /* fallback to defaults */ }
-  return {}
-}
+import { getModelConfig, resolveApiKey } from '@/lib/model-config'
 
 export async function POST(req: NextRequest) {
   try {
     const { prompt, genre, style, characters, existingScript, mode } = await req.json()
 
     // 读取LLM配置
-    const llmConfig = await getModelConfig('llm')
+    const modelConf = await getModelConfig('llm')
+    const provider = modelConf?.provider || 'z-ai'
+    const modelId = modelConf?.modelId || 'default'
+    const llmConfig = modelConf?.config || {}
     const temperature = (llmConfig.temperature as number) ?? undefined
     const maxTokens = (llmConfig.maxTokens as number) ?? undefined
     const topP = (llmConfig.topP as number) ?? undefined
     const systemPromptTemplate = (llmConfig.systemPrompt as string) || ''
-
-    const zai = await ZAI.create()
 
     let systemPrompt = ''
     let userMessage = ''
@@ -99,31 +91,124 @@ export async function POST(req: NextRequest) {
       userMessage = prompt || '你好，我想创作一部短剧，请帮我开始构思。'
     }
 
+    // Override system prompt if user configured one
+    if (systemPromptTemplate) {
+      // For normal chat mode, use the user's system prompt
+      // For other modes, prepend it
+      if (mode === undefined || mode === 'chat') {
+        systemPrompt = systemPromptTemplate + '\n\n' + systemPrompt
+      }
+    }
+
     const messages = [
       { role: 'system' as const, content: systemPrompt },
-      { role: 'user' as const, content: userMessage }
+      { role: 'user' as const, content: userMessage },
     ]
 
-    const completion = await zai.chat.completions.create({
-      messages: messages,
-      thinking: { type: 'disabled' },
-      ...(temperature !== undefined && { temperature }),
-      ...(maxTokens !== undefined && { max_tokens: maxTokens }),
-      ...(topP !== undefined && { top_p: topP }),
-    })
+    // Route to appropriate provider
+    let response: string
 
-    const response = completion.choices[0]?.message?.content || ''
+    if (provider === 'z-ai') {
+      response = await callZai(messages, modelId, temperature, maxTokens, topP)
+    } else if (provider === 'openrouter') {
+      response = await callOpenAICompatible(
+        'https://openrouter.ai/api/v1',
+        modelId,
+        messages,
+        temperature,
+        maxTokens,
+        topP,
+        resolveApiKey('openrouter', modelConf?.apiKey),
+        {
+          'HTTP-Referer': 'https://drama-ai-lyart.vercel.app',
+          'X-Title': 'DramaAI',
+        },
+      )
+    } else if (provider === 'siliconflow') {
+      response = await callOpenAICompatible(
+        'https://api.siliconflow.cn/v1',
+        modelId,
+        messages,
+        temperature,
+        maxTokens,
+        topP,
+        resolveApiKey('siliconflow', modelConf?.apiKey),
+      )
+    } else {
+      // Fallback to z-ai
+      response = await callZai(messages, modelId, temperature, maxTokens, topP)
+    }
 
     return NextResponse.json({
       success: true,
       content: response,
-      mode: mode || 'chat'
+      mode: mode || 'chat',
     })
   } catch (error) {
     console.error('Script generation error:', error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : '生成剧本失败' },
-      { status: 500 }
+      { status: 500 },
     )
   }
+}
+
+// ── Provider-specific call functions ────────────────────────
+
+async function callZai(
+  messages: Array<{ role: string; content: string }>,
+  modelId: string,
+  temperature?: number,
+  maxTokens?: number,
+  topP?: number,
+): Promise<string> {
+  const zai = await ZAI.create()
+  const completion = await zai.chat.completions.create({
+    messages: messages as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+    thinking: { type: 'disabled' },
+    ...(modelId && modelId !== 'default' && { model: modelId }),
+    ...(temperature !== undefined && { temperature }),
+    ...(maxTokens !== undefined && { max_tokens: maxTokens }),
+    ...(topP !== undefined && { top_p: topP }),
+  })
+  return completion.choices[0]?.message?.content || ''
+}
+
+async function callOpenAICompatible(
+  baseUrl: string,
+  modelId: string,
+  messages: Array<{ role: string; content: string }>,
+  temperature?: number,
+  maxTokens?: number,
+  topP?: number,
+  apiKey?: string,
+  extraHeaders?: Record<string, string>,
+): Promise<string> {
+  if (!apiKey) {
+    throw new Error('API Key 未配置')
+  }
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      ...extraHeaders,
+    },
+    body: JSON.stringify({
+      model: modelId,
+      messages,
+      ...(temperature !== undefined && { temperature }),
+      ...(maxTokens !== undefined && { max_tokens: maxTokens }),
+      ...(topP !== undefined && { top_p: topP }),
+    }),
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(`API 请求失败 (${response.status}): ${errorBody}`)
+  }
+
+  const data = await response.json()
+  return data.choices?.[0]?.message?.content || ''
 }

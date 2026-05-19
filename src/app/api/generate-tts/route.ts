@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
-import { db } from '@/lib/db'
-
-// 从数据库读取模型配置
-async function getModelConfig(category: string): Promise<Record<string, unknown>> {
-  try {
-    const record = await db.modelConfig.findUnique({ where: { category } })
-    if (record) return JSON.parse(record.config)
-  } catch { /* fallback to defaults */ }
-  return {}
-}
+import { getModelConfig } from '@/lib/model-config'
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +11,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 读取TTS配置
-    const ttsConfig = await getModelConfig('tts')
+    const modelConf = await getModelConfig('tts')
+    const provider = modelConf?.provider || 'z-ai'
+    const ttsConfig = modelConf?.config || {}
+
+    // Currently only z-ai supports TTS
+    if (provider !== 'z-ai') {
+      return NextResponse.json(
+        { success: false, error: `TTS 不支持供应商 ${provider}，仅支持 Z-AI` },
+        { status: 400 },
+      )
+    }
+
     const maxLen = (ttsConfig.maxChars as number) || 1024
     const finalVoice = voice || (ttsConfig.defaultVoice as string) || 'tongtong'
     const finalSpeed = speed || (ttsConfig.defaultSpeed as number) || 1.0
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
       voice: finalVoice,
       speed: finalSpeed,
       response_format: format,
-      stream: false
+      stream: false,
     })
 
     const arrayBuffer = await response.arrayBuffer()
@@ -49,13 +51,13 @@ export async function POST(req: NextRequest) {
       success: true,
       audioUrl: dataUrl,
       size: buffer.length,
-      duration: Math.ceil(finalText.length / 4)
+      duration: Math.ceil(finalText.length / 4),
     })
   } catch (error) {
     console.error('TTS error:', error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : '语音合成失败' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
