@@ -65,25 +65,25 @@ export async function POST(req: NextRequest) {
 
     // ── z-ai provider ──────────────────────────────────────────
     if (provider === 'z-ai') {
-      // For TTS and video, just check if the env key exists
-      if (category === 'tts' || category === 'video') {
-        const envKey = process.env.ZAI_API_KEY
-        if (!envKey) {
-          return NextResponse.json({
-            success: false,
-            message: '连接失败: 未设置 ZAI_API_KEY 环境变量',
-          })
-        }
-        return NextResponse.json({
-          success: true,
-          message: `连接成功! Z-AI ${category === 'tts' ? 'TTS' : '视频'} 服务密钥已配置`,
-          latency: 0,
-        })
-      }
-
-      // For LLM and image, use the z-ai-web-dev-sdk
       const start = Date.now()
       try {
+        const zaiApiKey = process.env.ZAI_API_KEY || resolvedKey
+
+        if (!zaiApiKey) {
+          return NextResponse.json({
+            success: false,
+            message: '连接失败: 未配置 Z-AI API Key。请设置 ZAI_API_KEY 环境变量或在上方输入 API Key',
+          })
+        }
+
+        // ZAI.create() reads from .z-ai-config file. On Vercel we need to write it dynamically.
+        const fs = await import('fs/promises')
+        const path = await import('path')
+        const configPath = path.join(process.cwd(), '.z-ai-config')
+        const zaiBaseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai'
+        const configJson = JSON.stringify({ baseUrl: zaiBaseUrl, apiKey: zaiApiKey })
+        await fs.writeFile(configPath, configJson, 'utf-8')
+
         const ZAI = (await import('z-ai-web-dev-sdk')).default
         const zai = await ZAI.create()
 
@@ -124,6 +124,29 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({
               success: false,
               message: '连接失败: Z-AI 图像生成返回了无效的响应格式',
+            })
+          }
+        }
+
+        // TTS & Video — use a lightweight LLM call to verify SDK connectivity
+        if (category === 'tts' || category === 'video') {
+          const response = await zai.chat.completions.create({
+            messages: [{ role: 'user', content: 'Hi, reply with just OK' }],
+            model: 'default',
+            max_tokens: 5,
+          })
+          const latency = Date.now() - start
+          const label = category === 'tts' ? 'TTS' : '视频'
+          if (response && response.choices) {
+            return NextResponse.json({
+              success: true,
+              message: `连接成功! Z-AI ${label}服务SDK连接正常`,
+              latency,
+            })
+          } else {
+            return NextResponse.json({
+              success: false,
+              message: `连接失败: Z-AI ${label}服务SDK连接异常`,
             })
           }
         }
