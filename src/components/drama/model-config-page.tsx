@@ -86,7 +86,7 @@ interface ProviderInfo {
   categories: string[]
   envKey: string
   website: string
-  models: ModelOption[]
+  models: Record<string, ModelOption[]>  // keyed by category: { llm: [...], image: [...], ... }
 }
 
 interface ModelOption {
@@ -230,8 +230,10 @@ export function ModelConfigPage() {
     const providerId = editProviders[category] || 'z-ai'
     const provider = providers.find(p => p.id === providerId)
     if (!provider) return []
+    // models is Record<category, ModelOption[]> — extract the array for this category
+    const categoryModels = provider.models[category] || []
     // Sort: free models first
-    return [...provider.models].sort((a, b) => {
+    return [...categoryModels].sort((a, b) => {
       if (a.free && !b.free) return -1
       if (!a.free && b.free) return 1
       return a.name.localeCompare(b.name)
@@ -333,9 +335,10 @@ export function ModelConfigPage() {
     // Reset modelId to first available model for this provider
     const providers = providerMap[category] || []
     const provider = providers.find(p => p.id === providerId)
-    if (provider && provider.models.length > 0) {
+    const categoryModels = provider?.models[category] || []
+    if (provider && categoryModels.length > 0) {
       // Pick first free model if available, else first model
-      const firstModel = provider.models.find(m => m.free) || provider.models[0]
+      const firstModel = categoryModels.find(m => m.free) || categoryModels[0]
       setEditModelIds(prev => ({ ...prev, [category]: firstModel.id }))
     } else {
       setEditModelIds(prev => ({ ...prev, [category]: 'default' }))
@@ -637,7 +640,8 @@ function ProviderModelSelector({
   const [refreshing, setRefreshing] = useState(false)
 
   const currentProvider = providers.find(p => p.id === providerId)
-  const models = currentProvider?.models || []
+  // models is Record<category, ModelOption[]> — extract the array for this category
+  const models = currentProvider?.models[category] || []
   // Sort: free first
   const sortedModels = [...models].sort((a, b) => {
     if (a.free && !b.free) return -1
