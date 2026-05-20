@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+import { writeFileSync } from 'fs'
+import { join } from 'path'
 
 // 在 Vercel 环境中，将 darma_ 前缀的 Neon 环境变量映射为 Prisma 所需的 DATABASE_URL / DIRECT_URL
 // 这必须在 PrismaClient 实例化之前执行
@@ -30,6 +32,23 @@ if (!isPostgresUrl(process.env.DIRECT_URL)) {
   } else if (isPostgresUrl(process.env.darma_POSTGRES_URL)) {
     // 如果没有 non-pooling URL，使用 pooling URL 作为 fallback
     process.env.DIRECT_URL = process.env.darma_POSTGRES_URL
+  }
+}
+
+// ── z-ai-web-dev-sdk 配置文件自动生成 ──────────────────────────
+// z-ai-web-dev-sdk 的 ZAI.create() 从 .z-ai-config 文件读取配置。
+// 在 Vercel 无状态环境中，配置文件不会持久化，需要在每次冷启动时动态创建。
+// 如果 ZAI_API_KEY 环境变量已设置，自动生成配置文件。
+if (process.env.ZAI_API_KEY) {
+  try {
+    const configPath = join(process.cwd(), '.z-ai-config')
+    const config = {
+      baseUrl: process.env.ZAI_BASE_URL || 'https://api.z.ai',
+      apiKey: process.env.ZAI_API_KEY,
+    }
+    writeFileSync(configPath, JSON.stringify(config), 'utf-8')
+  } catch {
+    // Silently ignore — if write fails, ZAI.create() will throw its own error
   }
 }
 
