@@ -61,7 +61,10 @@ export async function GET(req: NextRequest) {
           { status: 400 },
         )
       }
-      const providers = getProvidersForCategory(categoryQuery as ProviderCategory)
+      const providers = getProvidersForCategory(categoryQuery as ProviderCategory).map(p => ({
+        ...p,
+        hasEnvKey: !!process.env[p.envKey],
+      }))
       return NextResponse.json({ success: true, providers })
     }
 
@@ -74,6 +77,7 @@ export async function GET(req: NextRequest) {
       provider: string
       modelId: string
       apiKey: string
+      hasEnvKey: boolean
       config: Record<string, unknown>
       enabled: boolean
     }> = {}
@@ -81,12 +85,14 @@ export async function GET(req: NextRequest) {
     for (const cat of categories) {
       const record = await db.modelConfig.findUnique({ where: { category: cat } })
       if (record) {
+        const providerInfo = PROVIDERS[record.provider]
         configs[cat] = {
           id: record.id,
           category: record.category,
           provider: record.provider,
           modelId: record.modelId,
           apiKey: record.apiKey,
+          hasEnvKey: providerInfo ? !!process.env[providerInfo.envKey] : false,
           config: JSON.parse(record.config),
           enabled: record.enabled,
         }
@@ -103,12 +109,14 @@ export async function GET(req: NextRequest) {
             enabled: true,
           },
         })
+        const providerInfo = PROVIDERS[created.provider]
         configs[cat] = {
           id: created.id,
           category: created.category,
           provider: created.provider,
           modelId: created.modelId,
           apiKey: created.apiKey,
+          hasEnvKey: providerInfo ? !!process.env[providerInfo.envKey] : false,
           config: defaultConf,
           enabled: true,
         }

@@ -30,6 +30,10 @@ import {
   Key,
   Server,
   Cpu,
+  PlugZap,
+  CircleCheck,
+  CircleX,
+  CircleDot,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
@@ -69,6 +73,7 @@ interface ModelConfigRecord {
   provider: string
   modelId: string
   apiKey: string
+  hasEnvKey: boolean
   config: Record<string, unknown>
   enabled: boolean
 }
@@ -86,7 +91,8 @@ interface ProviderInfo {
   categories: string[]
   envKey: string
   website: string
-  models: Record<string, ModelOption[]>  // keyed by category: { llm: [...], image: [...], ... }
+  hasEnvKey: boolean
+  models: Record<string, ModelOption[]>
 }
 
 interface ModelOption {
@@ -168,6 +174,10 @@ export function ModelConfigPage() {
   const [editModelIds, setEditModelIds] = useState<Record<string, string>>({})
   const [editApiKeys, setEditApiKeys] = useState<Record<string, string>>({})
 
+  // 连接测试状态
+  const [testStatus, setTestStatus] = useState<Record<string, 'idle' | 'testing' | 'success' | 'error'>>({})
+  const [testMessage, setTestMessage] = useState<Record<string, string>>({})
+
   // 加载配置
   const fetchConfigs = useCallback(async () => {
     try {
@@ -175,7 +185,6 @@ export function ModelConfigPage() {
       const data = await res.json()
       if (data.success && data.configs) {
         setConfigs(data.configs)
-        // 初始化编辑状态
         const edits: Record<string, Record<string, unknown>> = {}
         const provEdits: Record<string, string> = {}
         const modelEdits: Record<string, string> = {}
@@ -186,7 +195,6 @@ export function ModelConfigPage() {
           edits[key] = record.config
           provEdits[key] = record.provider || 'z-ai'
           modelEdits[key] = record.modelId || 'default'
-          // Don't prefill the apiKey input for security - show masked if set
           keyEdits[key] = record.apiKey ? '••••••••' : ''
         }
         setEditConfigs(edits)
@@ -220,7 +228,6 @@ export function ModelConfigPage() {
   }, [fetchConfigs])
 
   useEffect(() => {
-    // Fetch providers for the active tab
     fetchProviders(activeTab)
   }, [activeTab, fetchProviders])
 
@@ -230,9 +237,7 @@ export function ModelConfigPage() {
     const providerId = editProviders[category] || 'z-ai'
     const provider = providers.find(p => p.id === providerId)
     if (!provider) return []
-    // models is Record<category, ModelOption[]> — extract the array for this category
     const categoryModels = provider.models[category] || []
-    // Sort: free models first
     return [...categoryModels].sort((a, b) => {
       if (a.free && !b.free) return -1
       if (!a.free && b.free) return 1
@@ -248,7 +253,6 @@ export function ModelConfigPage() {
       const enabled = configs?.[category]?.enabled ?? true
       const provider = editProviders[category]
       const modelId = editModelIds[category]
-      // Only send apiKey if user changed it (not the masked placeholder)
       const apiKeyInput = editApiKeys[category]
       const apiKeyToSend = apiKeyInput === '••••••••' ? undefined : apiKeyInput
 
@@ -318,6 +322,37 @@ export function ModelConfigPage() {
     }
   }
 
+  // 测试连接
+  const testConnection = async (category: string) => {
+    setTestStatus(prev => ({ ...prev, [category]: 'testing' }))
+    setTestMessage(prev => ({ ...prev, [category]: '' }))
+    try {
+      const provider = editProviders[category]
+      const modelId = editModelIds[category]
+      const apiKeyInput = editApiKeys[category]
+      const apiKeyToSend = apiKeyInput === '••••••••' ? undefined : apiKeyInput
+
+      const res = await fetch('/api/model-config/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, modelId, apiKey: apiKeyToSend || undefined, category }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setTestStatus(prev => ({ ...prev, [category]: 'success' }))
+        toast.success(data.message)
+      } else {
+        setTestStatus(prev => ({ ...prev, [category]: 'error' }))
+        toast.error(data.message)
+      }
+      setTestMessage(prev => ({ ...prev, [category]: data.message }))
+    } catch {
+      setTestStatus(prev => ({ ...prev, [category]: 'error' }))
+      setTestMessage(prev => ({ ...prev, [category]: '网络请求失败' }))
+      toast.error('连接测试失败')
+    }
+  }
+
   // 更新编辑值
   const updateEdit = (category: string, key: string, value: unknown) => {
     setEditConfigs(prev => ({
@@ -332,19 +367,19 @@ export function ModelConfigPage() {
   // 更新供应商
   const updateProvider = (category: string, providerId: string) => {
     setEditProviders(prev => ({ ...prev, [category]: providerId }))
-    // Reset modelId to first available model for this provider
     const providers = providerMap[category] || []
     const provider = providers.find(p => p.id === providerId)
     const categoryModels = provider?.models[category] || []
     if (provider && categoryModels.length > 0) {
-      // Pick first free model if available, else first model
       const firstModel = categoryModels.find(m => m.free) || categoryModels[0]
       setEditModelIds(prev => ({ ...prev, [category]: firstModel.id }))
     } else {
       setEditModelIds(prev => ({ ...prev, [category]: 'default' }))
     }
-    // Clear apiKey when changing provider
     setEditApiKeys(prev => ({ ...prev, [category]: '' }))
+    // Reset test status
+    setTestStatus(prev => ({ ...prev, [category]: 'idle' }))
+    setTestMessage(prev => ({ ...prev, [category]: '' }))
   }
 
   // 检查是否有未保存的更改
@@ -365,6 +400,53 @@ export function ModelConfigPage() {
     const providerId = editProviders[category] || 'z-ai'
     const provider = providers.find(p => p.id === providerId)
     return provider?.envKey || ''
+  }
+
+  // 获取供应商是否已配置环境变量
+  const getHasEnvKey = (category: string): boolean => {
+    const providers = providerMap[category] || []
+    const providerId = editProviders[category] || 'z-ai'
+    const provider = providers.find(p => p.id === providerId)
+    return provider?.hasEnvKey || false
+  }
+
+  // 刷新模型列表（从 OpenRouter API 动态获取）
+  const refreshModels = async (category: string) => {
+    const providerId = editProviders[category]
+    if (providerId === 'openrouter') {
+      try {
+        const res = await fetch('/api/openrouter-models')
+        const data = await res.json()
+        if (data.success && data.models) {
+          // Update the provider map with live models
+          setProviderMap(prev => {
+            const updated = { ...prev }
+            const categoryProviders = [...(updated[category] || [])]
+            const idx = categoryProviders.findIndex(p => p.id === 'openrouter')
+            if (idx >= 0) {
+              categoryProviders[idx] = {
+                ...categoryProviders[idx],
+                models: {
+                  ...categoryProviders[idx].models,
+                  llm: data.models,
+                },
+              }
+            }
+            updated[category] = categoryProviders
+            return updated
+          })
+          toast.success(`已获取 ${data.models.length} 个 OpenRouter 模型`)
+        } else {
+          toast.error(data.error || '获取模型列表失败')
+        }
+      } catch {
+        toast.error('获取模型列表失败')
+      }
+    } else {
+      // For other providers, just re-fetch the provider list
+      await fetchProviders(category)
+      toast.success('模型列表已刷新')
+    }
   }
 
   if (loading) {
@@ -410,6 +492,8 @@ export function ModelConfigPage() {
           const provider = editProviders[cat.key] || 'z-ai'
           const providerList = providerMap[cat.key] || []
           const providerName = providerList.find(p => p.id === provider)?.name || provider
+          const providerHasEnvKey = providerList.find(p => p.id === provider)?.hasEnvKey || false
+          const currentTestStatus = testStatus[cat.key] || 'idle'
           return (
             <motion.div
               key={cat.key}
@@ -431,19 +515,41 @@ export function ModelConfigPage() {
                   <div className={cn('flex size-10 items-center justify-center rounded-lg', cat.bgColor)}>
                     <Icon className={cn('size-5', cat.textColor)} />
                   </div>
-                  <Badge
-                    variant={isEnabled ? 'default' : 'secondary'}
-                    className={cn(
-                      'text-[10px]',
-                      isEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500',
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge
+                      variant={isEnabled ? 'default' : 'secondary'}
+                      className={cn(
+                        'text-[10px]',
+                        isEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500',
+                      )}
+                    >
+                      {isEnabled ? '已启用' : '已禁用'}
+                    </Badge>
+                    {currentTestStatus === 'success' && (
+                      <CircleCheck className="size-3.5 text-emerald-500" />
                     )}
-                  >
-                    {isEnabled ? '已启用' : '已禁用'}
-                  </Badge>
+                    {currentTestStatus === 'error' && (
+                      <CircleX className="size-3.5 text-red-400" />
+                    )}
+                    {currentTestStatus === 'testing' && (
+                      <div className="size-3.5 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+                    )}
+                  </div>
                 </div>
                 <div className="mt-3">
                   <h3 className="text-sm font-semibold text-slate-900">{cat.label}</h3>
                   <p className="mt-0.5 text-xs text-slate-500">{providerName}</p>
+                  <div className="mt-1 flex items-center gap-1">
+                    {providerHasEnvKey || configs[cat.key]?.apiKey ? (
+                      <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">
+                        <Key className="mr-0.5 size-2.5" /> Key 已配置
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[9px] border-amber-300 bg-amber-50 text-amber-600">
+                        <Key className="mr-0.5 size-2.5" /> 未配置 Key
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 {hasChanges(cat.key) && (
                   <div className="absolute right-2 top-2">
@@ -490,6 +596,30 @@ export function ModelConfigPage() {
                   })()}
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Test Connection Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      'h-7 gap-1.5 text-xs',
+                      testStatus[activeTab] === 'success' && 'border-emerald-300 text-emerald-600 hover:text-emerald-700',
+                      testStatus[activeTab] === 'error' && 'border-red-300 text-red-500 hover:text-red-600',
+                      testStatus[activeTab] !== 'success' && testStatus[activeTab] !== 'error' && 'text-slate-500 hover:text-violet-600',
+                    )}
+                    onClick={() => testConnection(activeTab)}
+                    disabled={testStatus[activeTab] === 'testing'}
+                  >
+                    {testStatus[activeTab] === 'testing' ? (
+                      <div className="size-3 animate-spin rounded-full border-2 border-slate-300 border-t-violet-600" />
+                    ) : testStatus[activeTab] === 'success' ? (
+                      <CircleCheck className="size-3" />
+                    ) : testStatus[activeTab] === 'error' ? (
+                      <CircleX className="size-3" />
+                    ) : (
+                      <PlugZap className="size-3" />
+                    )}
+                    {testStatus[activeTab] === 'testing' ? '测试中...' : '测试连接'}
+                  </Button>
                   <Switch
                     checked={configs[activeTab]?.enabled ?? true}
                     onCheckedChange={(checked) => toggleEnabled(activeTab, checked)}
@@ -531,6 +661,17 @@ export function ModelConfigPage() {
                   </Button>
                 </div>
               </div>
+              {/* Test result message */}
+              {testMessage[activeTab] && (
+                <div className={cn(
+                  'mt-2 rounded-lg px-3 py-2 text-xs',
+                  testStatus[activeTab] === 'success'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-red-50 text-red-600 border border-red-200',
+                )}>
+                  {testMessage[activeTab]}
+                </div>
+              )}
             </div>
 
             <div className="p-6">
@@ -548,10 +689,12 @@ export function ModelConfigPage() {
                     providerId={editProviders[activeTab] || 'z-ai'}
                     modelId={editModelIds[activeTab] || 'default'}
                     apiKey={editApiKeys[activeTab] || ''}
+                    hasEnvKey={getHasEnvKey(activeTab)}
                     providers={providerMap[activeTab] || []}
                     onProviderChange={(id) => updateProvider(activeTab, id)}
                     onModelChange={(id) => setEditModelIds(prev => ({ ...prev, [activeTab]: id }))}
                     onApiKeyChange={(key) => setEditApiKeys(prev => ({ ...prev, [activeTab]: key }))}
+                    onRefreshModels={() => refreshModels(activeTab)}
                   />
 
                   <Separator className="my-6" />
@@ -601,10 +744,11 @@ export function ModelConfigPage() {
               <div className="space-y-1">
                 <p className="text-sm font-medium text-slate-700">配置说明</p>
                 <ul className="space-y-0.5 text-xs text-slate-500">
-                  <li>• 选择供应商和模型后点击"保存"按钮使其生效</li>
-                  <li>• API Key 留空则使用环境变量中的配置</li>
-                  <li>• 免费模型标记为 <Badge variant="outline" className="ml-0.5 text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">免费</Badge> 无需付费即可使用</li>
-                  <li>• OpenRouter 支持刷新获取最新模型列表</li>
+                  <li>• 选择供应商和模型后点击「保存」按钮使其生效</li>
+                  <li>• 保存后点击「测试连接」验证配置是否正常工作</li>
+                  <li>• API Key 留空则使用环境变量中的配置，<Badge variant="outline" className="mx-0.5 text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">Key 已配置</Badge> 表示环境变量已设置</li>
+                  <li>• 免费模型标记为 <Badge variant="outline" className="mx-0.5 text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">免费</Badge> 无需付费即可使用</li>
+                  <li>• 点击「刷新模型」可从供应商获取最新可用模型列表</li>
                   <li>• 温度值越高，AI生成内容越有创造性；越低则越稳定可控</li>
                 </ul>
               </div>
@@ -622,27 +766,29 @@ function ProviderModelSelector({
   providerId,
   modelId,
   apiKey,
+  hasEnvKey,
   providers,
   onProviderChange,
   onModelChange,
   onApiKeyChange,
+  onRefreshModels,
 }: {
   category: string
   providerId: string
   modelId: string
   apiKey: string
+  hasEnvKey: boolean
   providers: ProviderInfo[]
   onProviderChange: (id: string) => void
   onModelChange: (id: string) => void
   onApiKeyChange: (key: string) => void
+  onRefreshModels: () => void
 }) {
   const [showApiKey, setShowApiKey] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
   const currentProvider = providers.find(p => p.id === providerId)
-  // models is Record<category, ModelOption[]> — extract the array for this category
   const models = currentProvider?.models[category] || []
-  // Sort: free first
   const sortedModels = [...models].sort((a, b) => {
     if (a.free && !b.free) return -1
     if (!a.free && b.free) return 1
@@ -650,30 +796,16 @@ function ProviderModelSelector({
   })
 
   const envKey = currentProvider?.envKey || ''
-  const hasEnvKey = false // We can't check env vars from client, show hint only
 
-  // Refresh models from OpenRouter
-  const refreshModels = async () => {
-    if (providerId !== 'openrouter') return
+  const handleRefreshModels = async () => {
     setRefreshing(true)
     try {
-      const res = await fetch('/api/openrouter-models')
-      const data = await res.json()
-      if (data.success && data.models) {
-        toast.success(`已获取 ${data.models.length} 个模型`)
-        // Update the provider map with live models
-        // This is handled by re-fetching providers
-      } else {
-        toast.error(data.error || '获取模型列表失败')
-      }
-    } catch {
-      toast.error('获取模型列表失败')
+      await onRefreshModels()
     } finally {
       setRefreshing(false)
     }
   }
 
-  // Determine icon color based on category
   const iconColorMap: Record<string, string> = {
     llm: 'text-violet-500',
     image: 'text-emerald-500',
@@ -709,21 +841,26 @@ function ProviderModelSelector({
                     {p.id === 'z-ai' && (
                       <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">内置</Badge>
                     )}
+                    {p.hasEnvKey && p.id !== 'z-ai' && (
+                      <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">Key 已配置</Badge>
+                    )}
                   </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {currentProvider && (
-            <a
-              href={currentProvider.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-violet-500 transition-colors"
-            >
-              <ExternalLink className="size-3" />
-              {currentProvider.website}
-            </a>
+            <div className="flex items-center justify-between">
+              <a
+                href={currentProvider.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-violet-500 transition-colors"
+              >
+                <ExternalLink className="size-3" />
+                {currentProvider.website}
+              </a>
+            </div>
           )}
         </div>
 
@@ -732,19 +869,24 @@ function ProviderModelSelector({
           <div className="flex items-center gap-2">
             <Key className={cn('size-4', iconColor)} />
             <Label className="text-sm font-medium text-slate-900">API Key</Label>
-            {apiKey && apiKey !== '' && (
-              <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">已配置</Badge>
+            {(apiKey && apiKey !== '' && apiKey !== '••••••••') ? (
+              <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">自定义</Badge>
+            ) : hasEnvKey ? (
+              <Badge variant="outline" className="text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">环境变量</Badge>
+            ) : (
+              <Badge variant="outline" className="text-[9px] border-amber-300 bg-amber-50 text-amber-600">未配置</Badge>
             )}
           </div>
           <p className="text-xs text-slate-500">
             留空则使用环境变量 {envKey && <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px] font-mono text-slate-600">{envKey}</code>}
+            {hasEnvKey && <span className="ml-1 text-emerald-500">(已配置)</span>}
           </p>
           <div className="relative">
             <Input
               type={showApiKey ? 'text' : 'password'}
               value={apiKey}
               onChange={(e) => onApiKeyChange(e.target.value)}
-              placeholder={envKey ? `留空使用 ${envKey}` : '输入 API Key'}
+              placeholder={hasEnvKey ? `留空使用环境变量 ${envKey}` : '输入 API Key'}
               className="pr-10 font-mono text-sm"
             />
             <button
@@ -764,19 +906,18 @@ function ProviderModelSelector({
           <div className="flex items-center gap-2">
             <Cpu className={cn('size-4', iconColor)} />
             <Label className="text-sm font-medium text-slate-900">模型选择</Label>
+            <Badge variant="outline" className="text-[9px] text-slate-500">{sortedModels.length} 个模型</Badge>
           </div>
-          {providerId === 'openrouter' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 text-xs text-slate-500 hover:text-violet-600"
-              onClick={refreshModels}
-              disabled={refreshing}
-            >
-              <RefreshCw className={cn('size-3', refreshing && 'animate-spin')} />
-              刷新模型
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-slate-500 hover:text-violet-600"
+            onClick={handleRefreshModels}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn('size-3', refreshing && 'animate-spin')} />
+            刷新模型
+          </Button>
         </div>
         <p className="text-xs text-slate-500">
           选择该供应商下的具体模型。<Badge variant="outline" className="mx-0.5 text-[9px] border-emerald-300 bg-emerald-50 text-emerald-600">免费</Badge> 标记的模型无需付费。
@@ -808,6 +949,7 @@ function ProviderModelSelector({
           <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
             <Cpu className="mx-auto size-6 text-slate-300" />
             <p className="mt-2 text-xs text-slate-400">该供应商在此分类下暂无可用模型</p>
+            <p className="mt-1 text-[10px] text-slate-400">点击「刷新模型」获取最新列表</p>
           </div>
         )}
 
@@ -1136,7 +1278,7 @@ function ImageConfig({
           </p>
         </div>
 
-        {/* Info */}
+        {/* Preview */}
         <div className="space-y-3 rounded-xl border border-slate-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 p-4">
           <div className="flex items-center gap-2">
             <MonitorPlay className="size-4 text-emerald-500" />
@@ -1145,7 +1287,7 @@ function ImageConfig({
           <div className="space-y-2 text-xs text-slate-500">
             <div className="flex justify-between">
               <span>输出格式</span>
-              <span className="font-medium text-slate-700">PNG / URL</span>
+              <span className="font-medium text-slate-700">PNG (Base64)</span>
             </div>
             <Separator className="my-1" />
             <div className="flex justify-between">
@@ -1200,7 +1342,7 @@ function TTSConfig({
             <SelectContent>
               {VOICE_OPTIONS.map(v => (
                 <SelectItem key={v.value} value={v.value}>
-                  {getVoiceLabel(v.value)}
+                  {v.label} - {v.desc}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1229,23 +1371,6 @@ function TTSConfig({
             <span>0.5x (慢速)</span>
             <span>1.0x (正常)</span>
             <span>2.0x (快速)</span>
-          </div>
-          <div className="flex gap-2 pt-1">
-            {[
-              { label: '慢速', value: 0.7 },
-              { label: '正常', value: 1.0 },
-              { label: '快速', value: 1.4 },
-            ].map(preset => (
-              <Button
-                key={preset.label}
-                variant={speed === preset.value ? 'default' : 'outline'}
-                size="sm"
-                className="h-7 flex-1 text-[11px]"
-                onClick={() => onChange('defaultSpeed', preset.value)}
-              >
-                {preset.label}
-              </Button>
-            ))}
           </div>
         </div>
 
@@ -1287,61 +1412,6 @@ function TTSConfig({
             step={128}
             className="font-mono text-sm"
           />
-          <div className="flex gap-2">
-            {[
-              { label: '256字', value: 256 },
-              { label: '512字', value: 512 },
-              { label: '1024字', value: 1024 },
-              { label: '2048字', value: 2048 },
-            ].map(preset => (
-              <Button
-                key={preset.label}
-                variant={maxChars === preset.value ? 'default' : 'outline'}
-                size="sm"
-                className="h-7 flex-1 text-[11px]"
-                onClick={() => onChange('maxChars', preset.value)}
-              >
-                {preset.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Voice Preview */}
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 lg:col-span-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-amber-500" />
-            <h4 className="text-sm font-medium text-slate-900">可用声音一览</h4>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {VOICE_OPTIONS.map(v => (
-              <div
-                key={v.value}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg border p-3 transition-all',
-                  (config.defaultVoice as string) === v.value
-                    ? 'border-amber-300 bg-amber-50'
-                    : 'border-slate-200 hover:border-slate-300',
-                )}
-              >
-                <div className={cn(
-                  'flex size-8 items-center justify-center rounded-full',
-                  (config.defaultVoice as string) === v.value
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-slate-100 text-slate-400',
-                )}>
-                  <Mic className="size-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-slate-900">{v.label}</p>
-                  <p className="truncate text-[10px] text-slate-500">{getVoiceLabel(v.value)}</p>
-                </div>
-                {(config.defaultVoice as string) === v.value && (
-                  <Check className="size-3.5 text-amber-500" />
-                )}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
@@ -1445,13 +1515,13 @@ function VideoConfig({
           </div>
         </div>
 
-        {/* Video Size */}
+        {/* Size */}
         <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
             <Film className="size-4 text-rose-500" />
-            <Label className="text-sm font-medium text-slate-900">默认分辨率</Label>
+            <Label className="text-sm font-medium text-slate-900">分辨率</Label>
           </div>
-          <p className="text-xs text-slate-500">视频输出分辨率。</p>
+          <p className="text-xs text-slate-500">视频输出的分辨率。</p>
           <Select
             value={(config.defaultSize as string) || '1920x1080'}
             onValueChange={(val) => onChange('defaultSize', val)}
@@ -1474,29 +1544,33 @@ function VideoConfig({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Volume2 className="size-4 text-rose-500" />
-              <Label className="text-sm font-medium text-slate-900">包含音频</Label>
+              <Label className="text-sm font-medium text-slate-900">自动生成音频</Label>
             </div>
             <Switch
               checked={(config.withAudio as boolean) ?? false}
               onCheckedChange={(checked) => onChange('withAudio', checked)}
             />
           </div>
-          <p className="text-xs text-slate-500">生成的视频是否包含音频。</p>
+          <p className="text-xs text-slate-500">
+            开启后，视频生成时会自动包含音频轨道。注意：可能会增加生成时间和成本。
+          </p>
         </div>
 
         {/* Auto Poll */}
         <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <RefreshCw className="size-4 text-rose-500" />
-              <Label className="text-sm font-medium text-slate-900">自动轮询</Label>
+              <Zap className="size-4 text-rose-500" />
+              <Label className="text-sm font-medium text-slate-900">自动轮询状态</Label>
             </div>
             <Switch
               checked={(config.autoPoll as boolean) ?? true}
               onCheckedChange={(checked) => onChange('autoPoll', checked)}
             />
           </div>
-          <p className="text-xs text-slate-500">视频生成后自动轮询获取结果。</p>
+          <p className="text-xs text-slate-500">
+            开启后，提交视频生成任务后会自动轮询状态直到完成。
+          </p>
         </div>
       </div>
     </div>
