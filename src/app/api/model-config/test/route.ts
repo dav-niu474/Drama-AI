@@ -82,12 +82,15 @@ export async function POST(req: NextRequest) {
         const fs = await import('fs/promises')
         const path = await import('path')
         const zaiBaseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai'
-        const configJson = JSON.stringify({ baseUrl: zaiBaseUrl, apiKey: zaiApiKey })
+        const config: Record<string, string> = { baseUrl: zaiBaseUrl, apiKey: zaiApiKey }
+        if (process.env.ZAI_CHAT_ID) config.chatId = process.env.ZAI_CHAT_ID
+        if (process.env.ZAI_TOKEN) config.token = process.env.ZAI_TOKEN
+        if (process.env.ZAI_USER_ID) config.userId = process.env.ZAI_USER_ID
         // Set HOME=/tmp so os.homedir() returns /tmp (writable on Vercel)
         if (process.env.HOME !== '/tmp') {
           process.env.HOME = '/tmp'
         }
-        await fs.writeFile(path.join('/tmp', '.z-ai-config'), configJson, 'utf-8')
+        await fs.writeFile(path.join('/tmp', '.z-ai-config'), JSON.stringify(config), 'utf-8')
 
         const ZAI = (await import('z-ai-web-dev-sdk')).default
         const zai = await ZAI.create()

@@ -50,10 +50,14 @@ if (process.env.ZAI_API_KEY) {
     if (process.env.HOME !== configDir) {
       process.env.HOME = configDir
     }
-    const config = {
+    const config: Record<string, string> = {
       baseUrl: process.env.ZAI_BASE_URL || 'https://api.z.ai',
       apiKey: process.env.ZAI_API_KEY,
     }
+    // Include optional fields from env vars if set
+    if (process.env.ZAI_CHAT_ID) config.chatId = process.env.ZAI_CHAT_ID
+    if (process.env.ZAI_TOKEN) config.token = process.env.ZAI_TOKEN
+    if (process.env.ZAI_USER_ID) config.userId = process.env.ZAI_USER_ID
     writeFileSync(join(configDir, '.z-ai-config'), JSON.stringify(config), 'utf-8')
   } catch {
     // Silently ignore — if write fails, ZAI.create() will throw its own error
