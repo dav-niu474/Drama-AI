@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
+import { homedir } from 'os'
 
 // 在 Vercel 环境中，将 darma_ 前缀的 Neon 环境变量映射为 Prisma 所需的 DATABASE_URL / DIRECT_URL
 // 这必须在 PrismaClient 实例化之前执行
@@ -36,17 +37,24 @@ if (!isPostgresUrl(process.env.DIRECT_URL)) {
 }
 
 // ── z-ai-web-dev-sdk 配置文件自动生成 ──────────────────────────
-// z-ai-web-dev-sdk 的 ZAI.create() 从 .z-ai-config 文件读取配置。
-// 在 Vercel 无状态环境中，配置文件不会持久化，需要在每次冷启动时动态创建。
-// 如果 ZAI_API_KEY 环境变量已设置，自动生成配置文件。
+// z-ai-web-dev-sdk 的 ZAI.create() 从 .z-ai-config 文件读取配置，搜索路径：
+//   1. cwd/.z-ai-config  (Vercel: /var/task — 只读)
+//   2. ~/.z-ai-config    (Vercel: /home/... — 可能只读)
+//   3. /etc/.z-ai-config (只读)
+// 解决方案：将 HOME 环境变量重写为 /tmp，然后在 /tmp 写入配置文件。
+// 这样 SDK 的路径 2 就变成 /tmp/.z-ai-config，可以正常读写。
 if (process.env.ZAI_API_KEY) {
   try {
-    const configPath = join(process.cwd(), '.z-ai-config')
+    // Redirect home directory to /tmp so SDK can find the config there
+    const configDir = '/tmp'
+    if (process.env.HOME !== configDir) {
+      process.env.HOME = configDir
+    }
     const config = {
       baseUrl: process.env.ZAI_BASE_URL || 'https://api.z.ai',
       apiKey: process.env.ZAI_API_KEY,
     }
-    writeFileSync(configPath, JSON.stringify(config), 'utf-8')
+    writeFileSync(join(configDir, '.z-ai-config'), JSON.stringify(config), 'utf-8')
   } catch {
     // Silently ignore — if write fails, ZAI.create() will throw its own error
   }

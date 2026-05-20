@@ -77,12 +77,17 @@ export async function POST(req: NextRequest) {
         }
 
         // ZAI.create() reads from .z-ai-config file. On Vercel we need to write it dynamically.
+        // db.ts already sets HOME=/tmp and writes config there, but this test route
+        // might be called before db.ts module loads, so we ensure config exists here too.
         const fs = await import('fs/promises')
         const path = await import('path')
-        const configPath = path.join(process.cwd(), '.z-ai-config')
         const zaiBaseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai'
         const configJson = JSON.stringify({ baseUrl: zaiBaseUrl, apiKey: zaiApiKey })
-        await fs.writeFile(configPath, configJson, 'utf-8')
+        // Set HOME=/tmp so os.homedir() returns /tmp (writable on Vercel)
+        if (process.env.HOME !== '/tmp') {
+          process.env.HOME = '/tmp'
+        }
+        await fs.writeFile(path.join('/tmp', '.z-ai-config'), configJson, 'utf-8')
 
         const ZAI = (await import('z-ai-web-dev-sdk')).default
         const zai = await ZAI.create()
